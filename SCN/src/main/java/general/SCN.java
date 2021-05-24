@@ -31,9 +31,7 @@ public class SCN extends Thread{
 				List <Produto> produtos = generateRandonProductList();
 				Pedido pedido = new Pedido(new Timestamp(System.currentTimeMillis()), produtos);
 				Client client = new Client(clientId, pedido);
-				System.out.println("YOO");
 				client.start();
-				System.out.println("POIS");
 				clientId++;
 				//sleep between 5s-10s
 				int sleepTime = (int)(Math.random()*5000 + 5000); 

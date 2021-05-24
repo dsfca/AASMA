@@ -48,7 +48,6 @@ public class Client extends Thread{
 	}
 	
 	public void startConnection() throws IOException {
-		System.out.println("HMM");
 		this.clientSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
 		
 		this.objectOutputStream = new ObjectOutputStream(this.clientSocket.getOutputStream());
