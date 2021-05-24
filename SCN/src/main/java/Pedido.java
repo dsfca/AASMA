@@ -1,16 +1,18 @@
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Pedido {
 	
-	private String data_rececao;
-	private String data_limite;
+	private Timestamp data_rececao;
+	private Timestamp data_limite;
 	private List <Produto> produtos;
 	private EstadoPedido estado;
+	private int TotalPrice;
 
-	public Pedido(String data_rececao, List <Produto> produtos) {
+	public Pedido(Timestamp data_rececao, List <Produto> produtos) {
 		this.data_rececao = data_rececao;
-		this.data_limite = "";
+		// data limite
 		this.produtos = produtos;
 		this.estado = EstadoPedido.PEDIDO;
 	}
@@ -28,16 +30,16 @@ public class Pedido {
 		}
 	}
 	
-	public void setDataLimite(String data_limite) {
+	public void setDataLimite(Timestamp data_limite) {
 		this.data_limite = data_limite;
 	}
 	
 	/**GETTERS*/
-	public String getDataRececao() {
+	public Timestamp getDataRececao() {
 		return this.data_rececao;
 	}
 
-	public String getDataLimite() {
+	public Timestamp getDataLimite() {
 		return this.data_limite;
 	}
 	
@@ -58,11 +60,19 @@ public class Pedido {
 		List <Produto> produtos =  new ArrayList <Produto>();
 		produtos.add(prod);
 		produtos.add(prod);
-		Pedido p = new Pedido("hoje", produtos);
+		Pedido p = new Pedido(null, produtos);
 		System.out.println(p);
 
 	}
 	
+	public int getTotalPrice() {
+		return TotalPrice;
+	}
+
+	public void setTotalPrice(int totalPrice) {
+		TotalPrice = totalPrice;
+	}
+
 	enum EstadoPedido { //ALTERAR
 		PEDIDO,
 		PLANEADO,
