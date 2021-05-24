@@ -1,3 +1,4 @@
+package general;
 import java.io.File;
 import java.io.IOException;
 
@@ -22,12 +23,28 @@ public class IniManager {
 		return ini.get("OMA","server_port", Integer.class);
 	}
 	
-	public String getOMAhost() {
+	public String getOMAHost() {
 		return ini.get("OMA","host", String.class);
 	}
 	
 	public int getClientPort() {
 		return ini.get("Client","port", Integer.class);
+	}
+	
+	public String getClientHost() {
+		return ini.get("Client", "host", String.class);
+	}
+	
+	public int getProductMaxQ() {
+		return ini.get("Produto","max_quantidade", Integer.class);
+	}
+	
+	public int getProductMaxN() {
+		return ini.get("Produto","max_produtos_disponibilizados", Integer.class);
+	}
+	
+	public int getPedidoMaxP() {
+		return ini.get("Pedido","max_produtos_na_lista", Integer.class);
 	}
 	
 	public static void main(String[] args) {

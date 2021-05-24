@@ -1,3 +1,4 @@
+package general;
 import java.util.Comparator;
 
 public class SortbyPrice implements Comparator<Pedido> {

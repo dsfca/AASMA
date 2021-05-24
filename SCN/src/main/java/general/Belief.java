@@ -1,3 +1,4 @@
+package general;
 public class Belief {
 	
 	public int a_level;

@@ -1,14 +1,20 @@
+package general;
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Pedido {
-	
+public class Pedido implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Timestamp data_rececao;
 	private Timestamp data_limite;
 	private List <Produto> produtos;
 	private EstadoPedido estado;
-	private int TotalPrice;
+	private int totalPrice;
 
 	public Pedido(Timestamp data_rececao, List <Produto> produtos) {
 		this.data_rececao = data_rececao;
@@ -32,6 +38,14 @@ public class Pedido {
 	
 	public void setDataLimite(Timestamp data_limite) {
 		this.data_limite = data_limite;
+	}
+	
+	public int getTotalPrice() {
+		return totalPrice;
+	}
+
+	public void setTotalPrice(int totalPrice) {
+		this.totalPrice = totalPrice;
 	}
 	
 	/**GETTERS*/
@@ -63,14 +77,6 @@ public class Pedido {
 		Pedido p = new Pedido(null, produtos);
 		System.out.println(p);
 
-	}
-	
-	public int getTotalPrice() {
-		return TotalPrice;
-	}
-
-	public void setTotalPrice(int totalPrice) {
-		TotalPrice = totalPrice;
 	}
 
 	enum EstadoPedido { //ALTERAR

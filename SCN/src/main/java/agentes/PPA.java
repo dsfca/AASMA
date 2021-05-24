@@ -1,3 +1,4 @@
+package agentes;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -9,6 +10,13 @@ import java.util.Collections;
 import java.util.List;
 
 import org.ini4j.InvalidFileFormatException;
+
+import general.Belief;
+import general.IniManager;
+import general.Pedido;
+import general.Produto;
+import general.SortbyDate;
+import general.SortbyPrice;
 
 enum Desire {maximizeIncome, minimizeDeliveryTime};
 
@@ -34,7 +42,7 @@ public class PPA implements Runnable {
 		this.ini = new IniManager();
 		this.SERVER_PORT = ini.getOMAServerPort();
 		this.ssocket = new ServerSocket(SERVER_PORT);
-		this.socket = (Socket)new Socket(ini.getOMAhost(), ini.getOMAClientPort());
+		this.socket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAClientPort());
 		
 		this.desire = d;
 		this.n_plan = n;
