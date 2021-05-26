@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.HashMap;
 
@@ -23,14 +24,22 @@ public class OMA extends Thread {
 
 	private IniManager ini;
 	
-	private Socket imaSocket;
-	private ObjectOutputStream imaObjectOutputStream;
-	private ObjectInputStream imaObjectInputStream;
-	
 	private ServerSocket ssocket;
 	private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
 	
+	private Socket imaSocket;
+	private ObjectOutputStream imaObjectOutputStream;
+	private ObjectInputStream imaObjectInputStream;
+	
+	private Socket ppaSocket;
+	private ObjectOutputStream ppaObjectOutputStream;
+	private ObjectInputStream ppaObjectInputStream;
+	
+	//performance
+	private int requestsReceived;
+	private int requestsDelivered;
+	private int datasCumpridas;
 	
 	public OMA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
@@ -40,6 +49,12 @@ public class OMA extends Thread {
 		this.imaObjectInputStream = new ObjectInputStream(this.imaSocket.getInputStream());
 		
 		this.ssocket = new ServerSocket(ini.getOMAServerPort());
+		
+		this.ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+		this.ppaObjectOutputStream = new ObjectOutputStream(this.ppaSocket.getOutputStream());
+		System.out.println("AA");
+		this.ppaObjectInputStream = new ObjectInputStream(this.ppaSocket.getInputStream());
+
 	}
 	
 	private void newListener()
@@ -50,24 +65,25 @@ public class OMA extends Thread {
 	//CUIDADO COM OS OOS OIS PARA VARIOS CLIENTES
 	public void run() {
 		try {
-			Socket clientSocket = ssocket.accept();
+			Socket generalSocket = ssocket.accept();
 			System.out.println("OMA: started");
 			newListener();
 			
-			ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-			ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
+			this.objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
+			this.objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
+			
 			Pedido pedido = (Pedido) objectInputStream.readObject();
 			System.out.println("OMA: " + pedido.toString());
 			
-			HashMap <Produto, Integer> quantidades = queryIMAavailability(pedido);
-			System.out.println(quantidades);
+			//HashMap <Produto, Integer> quantidades = queryIMAavailability(pedido);
+			//System.out.println(quantidades);
 			//(ESTIMAR DATA ENTREGA)
+			pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
+			//ENVIAR PPA
+			this.ppaObjectOutputStream.writeObject(pedido);
+			//RECEBER RESPOSTA
+			//RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
 			
-			/*this.out = new PrintWriter(connection.getOutputStream(), true);
-	        this.in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-	        
-	        String pedido = in.readLine();
-	        System.out.println(pedido);*/
 	
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -81,12 +97,12 @@ public class OMA extends Thread {
 		
 	}
 	
-	public void enviarPedidoPPA(Pedido pedido) throws IOException {
+	/*public void enviarPedidoPPA(Pedido pedido) throws IOException {
 		this.objectOutputStream.writeObject(pedido);
-	}
+	}*/
 	
 	//PARA ESTIMAR DATA
-	public HashMap<Produto, Integer> queryIMAavailability(Pedido pedido) throws IOException, ClassNotFoundException {
+	/*public HashMap<Produto, Integer> queryIMAavailability(Pedido pedido) throws IOException, ClassNotFoundException {
 		HashMap <Produto, Integer> quantidades = new HashMap<Produto, Integer>();
 		
 		for (Produto produto: pedido.getProdutos()) {
@@ -96,7 +112,7 @@ public class OMA extends Thread {
 			quantidades.put(produto, quantidade);
 		}
 		return quantidades;
-	}
+	}*/
 /*	
 	public void sendMessage(String message) {
         try {

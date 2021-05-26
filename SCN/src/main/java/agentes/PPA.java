@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,8 +18,6 @@ import general.Pedido;
 import general.Produto;
 import general.SortbyDate;
 import general.SortbyPrice;
-
-enum Desire {maximizeIncome, minimizeDeliveryTime};
 
 public class PPA extends Thread {
 	
@@ -48,10 +47,12 @@ public class PPA extends Thread {
 	//setup socket for receiving orders, the agent's desire (maximize profit or minimize delivery time) and plan size
 	public PPA(Desire d, int n) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
+		this.queue = new ArrayList<Pedido>();
+		this.plan = new ArrayList<Pedido>();
 		
-		this.omaSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
-		this.omaObjectOutputStream = new ObjectOutputStream(this.omaSocket.getOutputStream());
-		this.omaObjectInputStream = new ObjectInputStream(this.omaSocket.getInputStream());
+		//this.omaSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
+		//this.omaObjectOutputStream = new ObjectOutputStream(this.omaSocket.getOutputStream());
+		//this.omaObjectInputStream = new ObjectInputStream(this.omaSocket.getInputStream());
 		
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		
@@ -72,14 +73,17 @@ public class PPA extends Thread {
 			if (id == -1)
 				this.id =  Thread.currentThread().getId();
 			
-			Socket clientSocket = ssocket.accept();
 			System.out.println("PPA: started");
-			newListener();
 			
 			//main thread handles deliberate behavior, the remaining threads register incoming orders
-			if (Thread.currentThread().getId() == id)
+			System.out.println(Thread.currentThread().getId());
+			if (Thread.currentThread().getId() == id) {
+				newListener();
 				Decision();
-			else{
+			}else{
+				Socket clientSocket = ssocket.accept();
+				newListener();
+				System.out.println("BBB");
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
 				ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
 				Pedido pedido = (Pedido) objectInputStream.readObject();
@@ -122,7 +126,7 @@ public class PPA extends Thread {
 						order(next_order);
 				}
 				
-				if (plan.size() < n_plan) deliberate();
+				if (plan.size() < this.n_plan) deliberate();
 			}
 			else{
 				deliberate();
@@ -178,19 +182,20 @@ public class PPA extends Thread {
 		
 	}
 
-	private void deliberate() {
+	private synchronized void deliberate() {
 	
-		queue.addAll(plan);
+		List<Pedido> queue_aux = queue;
+		queue_aux.addAll(plan);
+		
 		
 		if (desire == Desire.maximizeIncome)
-			Collections.sort(queue, new SortbyPrice());
+			Collections.sort(queue_aux, new SortbyPrice());
 		else
-			Collections.sort(queue, new SortbyDate());
+			Collections.sort(queue_aux, new SortbyDate());
 		
 		
-		
-		plan = queue.subList(0, n_plan);
-		queue.removeAll(plan);	
+		plan = queue_aux.subList(0, queue.size());
+		//queue_aux.removeAll(plan);	
 		
 	}
 
@@ -262,7 +267,7 @@ public class PPA extends Thread {
 		*/
 	}
 	
-	public void buildPlan() {
+	public synchronized void buildPlan() {
 		
 		if (desire == Desire.maximizeIncome) {
 			Collections.sort(plan, new SortbyPrice());
@@ -277,5 +282,6 @@ public class PPA extends Thread {
 		// TODO Auto-generated method stub
 
 	}
+	public enum Desire {maximizeIncome, minimizeDeliveryTime};
 
 }
