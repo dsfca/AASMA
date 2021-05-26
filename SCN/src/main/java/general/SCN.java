@@ -8,6 +8,7 @@ import java.util.Random;
 
 import org.ini4j.InvalidFileFormatException;
 
+import agentes.IMA;
 import agentes.OMA;
 
 public class SCN extends Thread{
@@ -23,6 +24,8 @@ public class SCN extends Thread{
 		int clientId = 1;
 		
 		try {
+			IMA ima = new IMA();
+			ima.start();
 			OMA oma = new OMA();
 			oma.start();
 			

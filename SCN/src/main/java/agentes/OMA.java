@@ -11,26 +11,35 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Base64;
+import java.util.HashMap;
 
 import org.ini4j.InvalidFileFormatException;
 
 import general.IniManager;
 import general.Pedido;
+import general.Produto;
 
 public class OMA extends Thread {
 
 	private IniManager ini;
-	private Socket socket;
-	private ServerSocket ssocket;
 	
+	private Socket imaSocket;
+	private ObjectOutputStream imaObjectOutputStream;
+	private ObjectInputStream imaObjectInputStream;
+	
+	private ServerSocket ssocket;
 	private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
 	
 	
 	public OMA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
+		
+		this.imaSocket = (Socket)new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+		this.imaObjectOutputStream = new ObjectOutputStream(this.imaSocket.getOutputStream());
+		this.imaObjectInputStream = new ObjectInputStream(this.imaSocket.getInputStream());
+		
 		this.ssocket = new ServerSocket(ini.getOMAServerPort());
-		//this.socket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAClientPort());
 	}
 	
 	private void newListener()
@@ -38,16 +47,22 @@ public class OMA extends Thread {
 		(new Thread(this)).start();
 	}
 	
-	
+	//CUIDADO COM OS OOS OIS PARA VARIOS CLIENTES
 	public void run() {
 		try {
-			Socket connection = ssocket.accept();
-			System.out.println("Coneccao lado servidor");
+			Socket clientSocket = ssocket.accept();
+			System.out.println("OMA: started");
 			newListener();
-			this.objectOutputStream = new ObjectOutputStream(connection.getOutputStream());
-			this.objectInputStream = new ObjectInputStream(connection.getInputStream());
+			
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+			ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
 			Pedido pedido = (Pedido) objectInputStream.readObject();
-			System.out.println(pedido.toString());
+			System.out.println("OMA: " + pedido.toString());
+			
+			HashMap <Produto, Integer> quantidades = queryIMAavailability(pedido);
+			System.out.println(quantidades);
+			//(ESTIMAR DATA ENTREGA)
+			
 			/*this.out = new PrintWriter(connection.getOutputStream(), true);
 	        this.in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 	        
@@ -60,6 +75,27 @@ public class OMA extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void receiveFromClient() {
+		
+	}
+	
+	public void enviarPedidoPPA(Pedido pedido) throws IOException {
+		this.objectOutputStream.writeObject(pedido);
+	}
+	
+	//PARA ESTIMAR DATA
+	public HashMap<Produto, Integer> queryIMAavailability(Pedido pedido) throws IOException, ClassNotFoundException {
+		HashMap <Produto, Integer> quantidades = new HashMap<Produto, Integer>();
+		
+		for (Produto produto: pedido.getProdutos()) {
+			this.imaObjectOutputStream.writeObject(produto);
+			int quantidade = (Integer) this.imaObjectInputStream.readObject();
+			System.out.println(quantidade);
+			quantidades.put(produto, quantidade);
+		}
+		return quantidades;
 	}
 /*	
 	public void sendMessage(String message) {
