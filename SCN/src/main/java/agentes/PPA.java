@@ -1,11 +1,11 @@
 package agentes;
-import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Base64;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,13 +20,19 @@ import general.SortbyPrice;
 
 enum Desire {maximizeIncome, minimizeDeliveryTime};
 
-public class PPA implements Runnable {
+public class PPA extends Thread {
 	
 	private static int SERVER_PORT;
 	
 	private IniManager ini;
-	private Socket socket;
+	
+	private Socket omaSocket;
+	private ObjectOutputStream omaObjectOutputStream;
+	private ObjectInputStream omaObjectInputStream;
+	
 	private ServerSocket ssocket;
+	private ObjectOutputStream objectOutputStream;
+	private ObjectInputStream objectInputStream;
 	
 	public Belief beliefs;
 	public Desire desire;
@@ -37,20 +43,24 @@ public class PPA implements Runnable {
 	
 	private Pedido last_order;
 	
-
+	private long id = -1;
+	
+	//setup socket for receiving orders, the agent's desire (maximize profit or minimize delivery time) and plan size
 	public PPA(Desire d, int n) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
-		this.SERVER_PORT = ini.getOMAServerPort();
-		this.ssocket = new ServerSocket(SERVER_PORT);
-		this.socket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAClientPort());
+		
+		this.omaSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
+		this.omaObjectOutputStream = new ObjectOutputStream(this.omaSocket.getOutputStream());
+		this.omaObjectInputStream = new ObjectInputStream(this.omaSocket.getInputStream());
+		
+		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		
 		this.desire = d;
 		this.n_plan = n;
 		this.last_order = null;
 	}
 	
-	//+
-	
+	//create new thread
 	private void newListener()
 	{
 		(new Thread(this)).start();
@@ -59,34 +69,35 @@ public class PPA implements Runnable {
 	
 	public void run() {
 		try {
-			Socket connection = ssocket.accept();
+			if (id == -1)
+				this.id =  Thread.currentThread().getId();
+			
+			Socket clientSocket = ssocket.accept();
+			System.out.println("PPA: started");
 			newListener();
-			DataInputStream dis = new DataInputStream(connection.getInputStream());
-			int message_lenght = dis.readInt();
-			byte[] binary_message = new byte[message_lenght];
-			dis.readFully(binary_message, 0, binary_message.length); // read the message
-
-			System.out.println("recebido binario com " + binary_message.length + " bytes");
+			
+			//main thread handles deliberate behavior, the remaining threads register incoming orders
+			if (Thread.currentThread().getId() == id)
+				Decision();
+			else{
+				ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+				ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
+				Pedido pedido = (Pedido) objectInputStream.readObject();
+				
+				addToQueue(pedido);
+				
+				System.out.println("PPA: " + pedido.toString());
+			}
 	
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public void sendMessage(String message) {
-        try {
-        	OutputStream output = socket.getOutputStream();
-        	
-        	String total_message = message;
-        	String encodedString = Base64.getEncoder().encodeToString(total_message.getBytes());
-        	
-        	PrintWriter writer = new PrintWriter(output, true);
-        	writer.println(encodedString);
-            
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-
+	private synchronized void addToQueue(Pedido pedido) {
+		queue.add(pedido);	
 	}
 	
 	//
@@ -107,7 +118,8 @@ public class PPA implements Runnable {
 				if (canProduce(next_order)) execute(next_order);
 				else{
 					buildPlan();
-					order(next_order);
+					if (next_order != last_order)
+						order(next_order);
 				}
 				
 				if (plan.size() < n_plan) deliberate();
@@ -122,13 +134,52 @@ public class PPA implements Runnable {
 	
 	private void order(Pedido order) {
 		
-		if (!(last_order == order)) {
+		String string;
+		int countA = 0, countB = 0, countC = 0, countD = 0;
 			
-			//send material order to the IMA
+		for (int i=0; i< order.getProdutos().size(); i++) 
+		{
+			string = order.getProdutos().get(i).getProduto();
+				
+			for(int j = 0; j < string.length(); j++) 
+			{    
+				if(string.charAt(i) == 'A')    
+					countA += order.getProdutos().get(i).getQuantidade();
+		        else if (string.charAt(i) == 'B')
+		        	countB += order.getProdutos().get(i).getQuantidade();
+		        else if (string.charAt(i) == 'C')
+		        	countC += order.getProdutos().get(i).getQuantidade();
+		        else
+		            countD += order.getProdutos().get(i).getQuantidade();
+			}    
 		}
+			
+		List <Produto> produtos = null;
+			
+		if (countA > 0)
+			produtos.add(new Produto("A", countA));
+		if (countB > 0)
+			produtos.add(new Produto("B", countB));
+		if (countC > 0)
+			produtos.add(new Produto("C", countC));
+		if (countD > 0)
+			produtos.add(new Produto("D", countD));
+			
+		try {
+			OutputStream outputStream = omaSocket.getOutputStream();
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+			objectOutputStream.writeObject(new Pedido(produtos));
+			
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
-	private void deliberate() {		
+	private void deliberate() {
+	
 		queue.addAll(plan);
 		
 		if (desire == Desire.maximizeIncome)
@@ -140,47 +191,55 @@ public class PPA implements Runnable {
 		
 		plan = queue.subList(0, n_plan);
 		queue.removeAll(plan);	
+		
 	}
 
 	private boolean canProduce(Pedido pedido) {
 		
-		Produto produto;
 		int a = 0, b = 0, c = 0, d = 0;
+		String string;
 		
 		for (int i = 0; i < pedido.getProdutos().size(); i++) {
 			
-			produto = pedido.getProdutos().get(i);
-			
-			if (produto.getProduto() == "X"){
-				// a += 
-				// b +=
-				// c +=
-				// d +=
-			}
-			else if (produto.getProduto() == "Y"){
-				// a += 
-				// b +=
-				// c +=
-				// d +=
-			}
-			else{
-				// a += 
-				// b +=
-				// c +=
-				// d +=
-			}
-			
-			if ( beliefs.a_level < a || beliefs.b_level < b || beliefs.c_level < c || beliefs.d_level < d )
-				return false;	
+			string = pedido.getProdutos().get(i).getProduto();
+				
+			for(int j = 0; j < string.length(); j++) 
+			{    
+				if(string.charAt(j) == 'A')    
+		            a += pedido.getProdutos().get(i).getQuantidade();
+		        else if (string.charAt(j) == 'B')
+		            b += pedido.getProdutos().get(i).getQuantidade();
+		        else if (string.charAt(j) == 'C')
+		            c += pedido.getProdutos().get(i).getQuantidade();
+		        else
+		            d += pedido.getProdutos().get(i).getQuantidade();
+		    }
 		}
 		
-		//return true only if MA is available for production
-		return true;
+		if ( beliefs.a_level < a || beliefs.b_level < b || beliefs.c_level < c || beliefs.d_level < d )
+			return false;
+		
+		return beliefs.MA_available;
 	}
 
 	private void execute(Pedido pedido) {
-		// Send order to MA
-		// maybe tell IMA to allocate the material?
+		
+		Socket socket;
+		
+		OutputStream outputStream;
+		try {
+			socket = new Socket("localhost", 7777);
+			outputStream = socket.getOutputStream();
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
+			objectOutputStream.writeObject(pedido);
+			socket.close();
+			
+			plan.remove(pedido);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		updateBeliefs();
 	}
@@ -193,10 +252,14 @@ public class PPA implements Runnable {
 		// beliefs.d_level = 
 	
 		//Ask MPA if there are new deliveries
-		//beliefs.new_deliveries
-		
-		//Ask MA if is clear to produce
-		//beliefs.MPA_available
+		/*
+		try {
+			//connect to MA
+			beliefs.MA_available = true;
+		} catch (IOException e) {
+			beliefs.MA_available = false;
+		}
+		*/
 	}
 	
 	public void buildPlan() {

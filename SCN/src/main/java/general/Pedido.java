@@ -23,6 +23,12 @@ public class Pedido implements Serializable {
 		this.estado = EstadoPedido.PEDIDO;
 	}
 	
+	public Pedido(List <Produto> produtos) {
+		this.produtos = produtos;
+		this.estado = EstadoPedido.PEDIDO;
+	}
+	
+	
 	/**SETTERS*/
 	public void setEstado(int estado) {
 		if (estado == 1) {

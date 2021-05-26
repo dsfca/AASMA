@@ -6,7 +6,7 @@ public class Belief {
 	public int c_level;
 	public int d_level;
 	
-	public boolean MPA_available;
+	public boolean MA_available;
 	public boolean new_deliveries;
 	
 }
