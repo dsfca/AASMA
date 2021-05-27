@@ -35,10 +35,10 @@ public class MPA extends Thread{
 	public MPA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		
-		this.supplierSocket = (Socket)new Socket(ini.getSupplierHost(), ini.getSupplierServerPort());
+		/*this.supplierSocket = (Socket)new Socket(ini.getSupplierHost(), ini.getSupplierServerPort());
 		this.supplierObjectOutputStream = new ObjectOutputStream(this.supplierSocket.getOutputStream());
 		this.supplierObjectInputStream = new ObjectInputStream(this.supplierSocket.getInputStream());
-		
+		*/
 		
 		this.ssocket = new ServerSocket(ini.getMPAServerPort());
 	}

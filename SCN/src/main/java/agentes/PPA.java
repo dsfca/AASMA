@@ -185,7 +185,8 @@ public class PPA extends Thread {
 	private synchronized void deliberate() {
 	
 		List<Pedido> queue_aux = queue;
-		queue_aux.addAll(plan);
+		//queue_aux.addAll(this.plan);
+		editPlan(4, null, queue_aux);
 		
 		
 		if (desire == Desire.maximizeIncome)
@@ -193,8 +194,7 @@ public class PPA extends Thread {
 		else
 			Collections.sort(queue_aux, new SortbyDate());
 		
-		
-		plan = queue_aux.subList(0, queue.size());
+		editPlan(1, null, queue_aux);
 		//queue_aux.removeAll(plan);	
 		
 	}
@@ -239,7 +239,7 @@ public class PPA extends Thread {
 			objectOutputStream.writeObject(pedido);
 			socket.close();
 			
-			plan.remove(pedido);
+			editPlan(3, pedido, null); //remove pedido from plan
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -267,15 +267,31 @@ public class PPA extends Thread {
 		*/
 	}
 	
-	public synchronized void buildPlan() {
+	public void buildPlan() {
+		editPlan(2, null, null);
+	}
+	
+	public synchronized List<Pedido> editPlan(int mode, Pedido pedido, List<Pedido> queue_aux) {
+		List<Pedido> queue_aux1 = new ArrayList<Pedido>();
+		if(mode == 1) { //equal to
+			this.plan = queue_aux.subList(0, this.queue.size());
 		
-		if (desire == Desire.maximizeIncome) {
-			Collections.sort(plan, new SortbyPrice());
-		}
-		else {
-			Collections.sort(plan, new SortbyDate());
-		}
+		}else if(mode == 2) { //build plan
+			if (desire == Desire.maximizeIncome) {
+				Collections.sort(plan, new SortbyPrice());
+			}
+			else {
+				Collections.sort(plan, new SortbyDate());
+			}
 		
+		}else if(mode == 3) { //remove
+			this.plan.remove(pedido);
+		
+		}else if(mode == 4) {
+			queue_aux.addAll(this.plan);
+			queue_aux1 = queue_aux;
+		}
+		return queue_aux1;
 	}
 	
 	public static void main(String[] args) {

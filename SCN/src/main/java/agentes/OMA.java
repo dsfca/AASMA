@@ -50,10 +50,9 @@ public class OMA extends Thread {
 		
 		this.ssocket = new ServerSocket(ini.getOMAServerPort());
 		
-		this.ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+		/*this.ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 		this.ppaObjectOutputStream = new ObjectOutputStream(this.ppaSocket.getOutputStream());
-		System.out.println("AA");
-		this.ppaObjectInputStream = new ObjectInputStream(this.ppaSocket.getInputStream());
+		this.ppaObjectInputStream = new ObjectInputStream(this.ppaSocket.getInputStream());*/
 
 	}
 	
@@ -80,7 +79,7 @@ public class OMA extends Thread {
 			//(ESTIMAR DATA ENTREGA)
 			pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
 			//ENVIAR PPA
-			this.ppaObjectOutputStream.writeObject(pedido);
+			/**this.ppaObjectOutputStream.writeObject(pedido);*/
 			//RECEBER RESPOSTA
 			//RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
 			
