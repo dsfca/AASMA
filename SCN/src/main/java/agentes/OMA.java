@@ -8,24 +8,27 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.ini4j.InvalidFileFormatException;
 
 import general.IniManager;
 import general.Pedido;
-import general.Produto;
+import general.Material;
 
 public class OMA extends Thread {
 
 	private IniManager ini;
 	
 	private ServerSocket ssocket;
-	private ObjectOutputStream objectOutputStream;
+	/*private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
 	
 	private Socket imaSocket;
@@ -35,26 +38,28 @@ public class OMA extends Thread {
 	private Socket ppaSocket;
 	private ObjectOutputStream ppaObjectOutputStream;
 	private ObjectInputStream ppaObjectInputStream;
-	
+	*/
 	//performance
 	private int requestsReceived;
 	private int requestsDelivered;
 	private int datasCumpridas;
 	
+	private int id;
+	
 	public OMA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
-		
+		this.ssocket = new ServerSocket(ini.getOMAServerPort());
+		this.id = 0;
+		/**
 		this.imaSocket = (Socket)new Socket(ini.getIMAHost(), ini.getIMAServerPort());
 		this.imaObjectOutputStream = new ObjectOutputStream(this.imaSocket.getOutputStream());
 		this.imaObjectInputStream = new ObjectInputStream(this.imaSocket.getInputStream());
 		
 		this.ssocket = new ServerSocket(ini.getOMAServerPort());
-		
-		this.ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+		*/
+		/*this.ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 		this.ppaObjectOutputStream = new ObjectOutputStream(this.ppaSocket.getOutputStream());
-		System.out.println("AA");
-		this.ppaObjectInputStream = new ObjectInputStream(this.ppaSocket.getInputStream());
-
+		this.ppaObjectInputStream = new ObjectInputStream(this.ppaSocket.getInputStream());*/
 	}
 	
 	private void newListener()
@@ -65,26 +70,40 @@ public class OMA extends Thread {
 	//CUIDADO COM OS OOS OIS PARA VARIOS CLIENTES
 	public void run() {
 		try {
+			//FROM CLIENTS
+			int my_id = ++id;
 			Socket generalSocket = ssocket.accept();
-			System.out.println("OMA: started");
 			newListener();
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
+			ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
 			
-			this.objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
-			this.objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
+			Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+			ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
+			System.out.println("OMA: connected streams successfully");
 			
+			/*Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+			ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
+			ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
+			*/
 			Pedido pedido = (Pedido) objectInputStream.readObject();
-			System.out.println("OMA: " + pedido.toString());
+			System.out.println("OMA" + my_id + ": " + pedido.toString());
 			
-			//HashMap <Produto, Integer> quantidades = queryIMAavailability(pedido);
-			//System.out.println(quantidades);
-			//(ESTIMAR DATA ENTREGA)
+			//ENVIAR IMA
+			/*Check*/
+			Object [] object = {"ci", pedido.getMateriais()};
+			imaObjectOutputStream.writeObject(object);
+			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
+			System.out.println(quantidades);
+			//(ESTIMAR DATA ENTREGA
 			pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
-			//ENVIAR PPA
-			this.ppaObjectOutputStream.writeObject(pedido);
-			//RECEBER RESPOSTA
-			//RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
-			
-	
+			//(ENVIAR PPA
+			/**ppaObjectOutputStream.writeObject(pedido);*/
+			//(RECEBER RESPOSTA
+			//Produto produto_final = objectInputStream.readObject();
+			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
+			/**objectOutputStream.writeObject(object);*/
+			System.out.println("OMA" + my_id + ": Terminou");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {

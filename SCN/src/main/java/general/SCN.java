@@ -38,7 +38,7 @@ public class SCN extends Thread{
 			
 			while(true) {
 				//CRIAR CLIENTES E PEDIDOS
-				List <Produto> produtos = generateRandonProductList();
+				List <Material> produtos = generateRandonProductList();
 				Pedido pedido = new Pedido(new Timestamp(System.currentTimeMillis()), produtos);
 				Client client = new Client(clientId, pedido);
 				client.start();
@@ -58,11 +58,11 @@ public class SCN extends Thread{
 		}
 	}
 
-	public Produto generateRandomProduct() {
+	public Material generateRandomProduct() {
 		Random r = new Random();
 		int result = r.nextInt(4-1) + 1;
 		
-		Produto produto = new Produto(generateRandomProductName(), generateRandomProductQuantity());
+		Material produto = new Material(generateRandomProductName(), generateRandomProductQuantity());
 		return produto;
 	}
 
@@ -71,7 +71,7 @@ public class SCN extends Thread{
 		String [] alfa = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 		
 		Random r = new Random();
-		int result = (r.nextInt(max_produtos-1) + 1)%26;
+		int result = (r.nextInt(max_produtos-1))%26;
 		return alfa[result];
 	}
 	
@@ -82,8 +82,8 @@ public class SCN extends Thread{
 		return result;
 	}
 	
-	public List<Produto> generateRandonProductList() {
-		List <Produto> produtos = new ArrayList <Produto> ();
+	public List<Material> generateRandonProductList() {
+		List <Material> produtos = new ArrayList <Material> ();
 		int max_produtos = ini.getPedidoMaxP();
 		Random r = new Random();
 		int result = (r.nextInt(max_produtos-1) + 1);

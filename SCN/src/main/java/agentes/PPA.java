@@ -15,7 +15,7 @@ import org.ini4j.InvalidFileFormatException;
 import general.Belief;
 import general.IniManager;
 import general.Pedido;
-import general.Produto;
+import general.Material;
 import general.SortbyDate;
 import general.SortbyPrice;
 
@@ -149,33 +149,33 @@ public class PPA extends Thread {
 		String string;
 		int countA = 0, countB = 0, countC = 0, countD = 0;
 			
-		for (int i=0; i< order.getProdutos().size(); i++) 
+		for (int i=0; i< order.getMateriais().size(); i++) 
 		{
-			string = order.getProdutos().get(i).getProduto();
+			string = order.getMateriais().get(i).getMaterial();
 				
 			for(int j = 0; j < string.length(); j++) 
 			{    
 				if(string.charAt(i) == 'A')    
-					countA += order.getProdutos().get(i).getQuantidade();
+					countA += order.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(i) == 'B')
-		        	countB += order.getProdutos().get(i).getQuantidade();
+		        	countB += order.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(i) == 'C')
-		        	countC += order.getProdutos().get(i).getQuantidade();
+		        	countC += order.getMateriais().get(i).getQuantidade();
 		        else
-		            countD += order.getProdutos().get(i).getQuantidade();
+		            countD += order.getMateriais().get(i).getQuantidade();
 			}    
 		}
 			
-		List <Produto> produtos = null;
+		List <Material> produtos = null;
 			
 		if (countA > 0)
-			produtos.add(new Produto("A", countA));
+			produtos.add(new Material("A", countA));
 		if (countB > 0)
-			produtos.add(new Produto("B", countB));
+			produtos.add(new Material("B", countB));
 		if (countC > 0)
-			produtos.add(new Produto("C", countC));
+			produtos.add(new Material("C", countC));
 		if (countD > 0)
-			produtos.add(new Produto("D", countD));
+			produtos.add(new Material("D", countD));
 			
 		try {
 			mpaObjectOutputStream.writeObject(new Pedido(produtos));
@@ -188,20 +188,20 @@ public class PPA extends Thread {
 		
 	}
 
-	private void deliberate() {
-		synchronized (plan){
-			queue.addAll(plan);
+	private synchronized void deliberate() {
+	
+		List<Pedido> queue_aux = queue;
+		//queue_aux.addAll(this.plan);
+		editPlan(4, null, queue_aux);
 		
 		
-			if (desire == Desire.maximizeIncome)
-				Collections.sort(queue, new SortbyPrice());
-			else
-				Collections.sort(queue, new SortbyDate());
-			
+		if (desire == Desire.maximizeIncome)
+			Collections.sort(queue_aux, new SortbyPrice());
+		else
+			Collections.sort(queue_aux, new SortbyDate());
 		
-			plan.addAll(queue.subList(0, queue.size()));
-			queue.removeAll(plan);
-		}
+		editPlan(1, null, queue_aux);
+		//queue_aux.removeAll(plan);	
 		
 	}
 	
@@ -212,20 +212,20 @@ public class PPA extends Thread {
 		int a = 0, b = 0, c = 0, d = 0;
 		String string;
 		
-		for (int i = 0; i < pedido.getProdutos().size(); i++) {
+		for (int i = 0; i < pedido.getMateriais().size(); i++) {
 			
-			string = pedido.getProdutos().get(i).getProduto();
+			string = pedido.getMateriais().get(i).getMaterial();
 				
 			for(int j = 0; j < string.length(); j++) 
 			{    
 				if(string.charAt(j) == 'A')    
-		            a += pedido.getProdutos().get(i).getQuantidade();
+		            a += pedido.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(j) == 'B')
-		            b += pedido.getProdutos().get(i).getQuantidade();
+		            b += pedido.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(j) == 'C')
-		            c += pedido.getProdutos().get(i).getQuantidade();
+		            c += pedido.getMateriais().get(i).getQuantidade();
 		        else
-		            d += pedido.getProdutos().get(i).getQuantidade();
+		            d += pedido.getMateriais().get(i).getQuantidade();
 		    }
 		}
 		
@@ -247,7 +247,7 @@ public class PPA extends Thread {
 			objectOutputStream.writeObject(pedido);
 			socket.close();
 			
-			plan.remove(pedido);
+			editPlan(3, pedido, null); //remove pedido from plan
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -274,9 +274,17 @@ public class PPA extends Thread {
 		}
 		*/
 	}
+
+	public void buildPlan() {
+		editPlan(2, null, null);
+	}
 	
-	public synchronized void buildPlan() {
-		synchronized (plan){
+	public synchronized List<Pedido> editPlan(int mode, Pedido pedido, List<Pedido> queue_aux) {
+		List<Pedido> queue_aux1 = new ArrayList<Pedido>();
+		if(mode == 1) { //equal to
+			this.plan = queue_aux.subList(0, this.queue.size());
+		
+		}else if(mode == 2) { //build plan
 			if (desire == Desire.maximizeIncome) {
 				Collections.sort(plan, new SortbyPrice());
 			}
@@ -284,7 +292,15 @@ public class PPA extends Thread {
 				Collections.sort(plan, new SortbyDate());
 			}
 		}
-
+		
+		}else if(mode == 3) { //remove
+			this.plan.remove(pedido);
+		
+		}else if(mode == 4) {
+			queue_aux.addAll(this.plan);
+			queue_aux1 = queue_aux;
+		}
+		return queue_aux1;
 	}
 	
 	public static void main(String[] args) {

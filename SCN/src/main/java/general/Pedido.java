@@ -12,19 +12,21 @@ public class Pedido implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private Timestamp data_rececao;
 	private Timestamp data_limite;
-	private List <Produto> produtos;
+	private List <Material> materiais;
+	private Material produto_final;
 	private EstadoPedido estado;
 	private int totalPrice;
 
-	public Pedido(Timestamp data_rececao, List <Produto> produtos) {
+	public Pedido(Timestamp data_rececao, List <Material> materiais) {
 		this.data_rececao = data_rececao;
 		// data limite
-		this.produtos = produtos;
+		this.materiais = materiais;
 		this.estado = EstadoPedido.PEDIDO;
+		this.produto_final = null;
 	}
 	
-	public Pedido(List <Produto> produtos) {
-		this.produtos = produtos;
+	public Pedido(List <Material> materiais) {
+		this.materiais = materiais;
 		this.estado = EstadoPedido.PEDIDO;
 	}
 	
@@ -54,6 +56,9 @@ public class Pedido implements Serializable {
 		this.totalPrice = totalPrice;
 	}
 	
+	public void setProdutoFinal(Material produto_final) {
+		this.produto_final = produto_final;
+	}
 	/**GETTERS*/
 	public Timestamp getDataRececao() {
 		return this.data_rececao;
@@ -63,8 +68,8 @@ public class Pedido implements Serializable {
 		return this.data_limite;
 	}
 	
-	public List <Produto> getProdutos(){
-		return this.produtos;
+	public List <Material> getMateriais(){
+		return this.materiais;
 	}
 	
 	public EstadoPedido getEstado() {
@@ -72,12 +77,16 @@ public class Pedido implements Serializable {
 	}
 	
 	public String toString() {
-		return (this.data_rececao + " " + this.data_limite + " " + this.produtos + " " + this.estado);
+		return (this.data_rececao + " " + this.data_limite + " " + this.materiais + " " + this.estado);
+	}
+	
+	public Material getProdutoFinal() {
+		return this.produto_final;
 	}
 	
 	public static void main(String[] args) {
-		Produto prod = new Produto("A", 1);
-		List <Produto> produtos =  new ArrayList <Produto>();
+		Material prod = new Material("A", 1);
+		List <Material> produtos =  new ArrayList <Material>();
 		produtos.add(prod);
 		produtos.add(prod);
 		Pedido p = new Pedido(null, produtos);

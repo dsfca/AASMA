@@ -39,7 +39,6 @@ public class MPA extends Thread{
 		//this.supplierObjectOutputStream = new ObjectOutputStream(this.supplierSocket.getOutputStream());
 		//this.supplierObjectInputStream = new ObjectInputStream(this.supplierSocket.getInputStream());
 		
-		
 		this.ssocket = new ServerSocket(ini.getMPAServerPort());
 	}
 	
