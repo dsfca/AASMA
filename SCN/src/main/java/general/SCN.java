@@ -9,6 +9,7 @@ import java.util.Random;
 import org.ini4j.InvalidFileFormatException;
 
 import agentes.IMA;
+import agentes.MPA;
 import agentes.OMA;
 import agentes.PPA;
 import agentes.PPA.Desire;
@@ -26,6 +27,8 @@ public class SCN extends Thread{
 		int clientId = 1;
 		
 		try {
+			MPA mpa = new MPA();
+			mpa.start();
 			PPA ppa = new PPA(Desire.maximizeIncome, 10);
 			ppa.start();
 			IMA ima = new IMA();

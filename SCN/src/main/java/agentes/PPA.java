@@ -21,8 +21,6 @@ import general.SortbyPrice;
 
 public class PPA extends Thread {
 	
-	private static int SERVER_PORT;
-	
 	private IniManager ini;
 	
 	private Socket mpaSocket;
@@ -35,8 +33,8 @@ public class PPA extends Thread {
 	
 	public Belief beliefs;
 	public Desire desire;
-	public List<Pedido> queue;
-	public List<Pedido> plan;
+	public volatile List<Pedido> queue;
+	public volatile List<Pedido> plan;
 	
 	public int n_plan;
 	
@@ -51,7 +49,7 @@ public class PPA extends Thread {
 		this.plan = new ArrayList<Pedido>();
 		
 
-		this.mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+		this.mpaSocket = (Socket) new Socket(ini.getMPAHost(), ini.getMPAServerPort());
 		this.mpaObjectOutputStream = new ObjectOutputStream(this.mpaSocket.getOutputStream());
 		this.mpaObjectInputStream = new ObjectInputStream(this.mpaSocket.getInputStream());
 
@@ -75,24 +73,26 @@ public class PPA extends Thread {
 			if (id == -1)
 				this.id =  Thread.currentThread().getId();
 			
-			System.out.println("PPA: started");
-			
 			//main thread handles deliberate behavior, the remaining threads register incoming orders
-			System.out.println(Thread.currentThread().getId());
+			//System.out.println(Thread.currentThread().getName());
 			if (Thread.currentThread().getId() == id) {
+				System.out.println("Deliberation Thread:" + Thread.currentThread().getName());
 				newListener();
 				Decision();
 			}else{
-				Socket clientSocket = ssocket.accept();
-				newListener();
-				System.out.println("BBB");
-				ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-				ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
-				Pedido pedido = (Pedido) objectInputStream.readObject();
+				System.out.println("Registration Thread:" + Thread.currentThread().getName());
+				while(true) {
+					System.out.println("Sou uma thread");
+					Socket clientSocket = ssocket.accept();
+					//newListener();
+					this.objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+					this.objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
+					Pedido pedido = (Pedido) objectInputStream.readObject();
 				
-				addToQueue(pedido);
+					System.out.println("PPA (" + Thread.currentThread().getName() + "): " + pedido.toString());
 				
-				System.out.println("PPA: " + pedido.toString());
+					addToQueue(pedido);
+				}
 			}
 	
 		} catch (IOException e) {
@@ -102,22 +102,26 @@ public class PPA extends Thread {
 		}
 	}
 	
-	private synchronized void addToQueue(Pedido pedido) {
-		queue.add(pedido);	
+	private void addToQueue(Pedido pedido) {
+		queue.add(pedido);
 	}
 	
 	//
 	
-	public void Decision() {
+	public synchronized void Decision() {
 		
 		while(true) {
 			
-			if (!queue.isEmpty())
+			if (queue.isEmpty())
 				continue;
+			
+			int size;
 			
 			updateBeliefs();
 			
-			if (!plan.isEmpty()) {
+			size = plan.size();
+						
+			if (size != 0) {
 				
 				Pedido next_order = plan.get(0);
 				
@@ -132,7 +136,9 @@ public class PPA extends Thread {
 			}
 			else{
 				deliberate();
-				buildPlan();
+				synchronized(plan) {
+					if (plan.size() > 1) buildPlan();
+				}
 			}
 		
 		}
@@ -182,22 +188,24 @@ public class PPA extends Thread {
 		
 	}
 
-	private synchronized void deliberate() {
-	
-		List<Pedido> queue_aux = queue;
-		queue_aux.addAll(plan);
+	private void deliberate() {
+		synchronized (plan){
+			queue.addAll(plan);
 		
 		
-		if (desire == Desire.maximizeIncome)
-			Collections.sort(queue_aux, new SortbyPrice());
-		else
-			Collections.sort(queue_aux, new SortbyDate());
+			if (desire == Desire.maximizeIncome)
+				Collections.sort(queue, new SortbyPrice());
+			else
+				Collections.sort(queue, new SortbyDate());
+			
 		
-		
-		plan = queue_aux.subList(0, queue.size());
-		//queue_aux.removeAll(plan);	
+			plan.addAll(queue.subList(0, queue.size()));
+			queue.removeAll(plan);
+		}
 		
 	}
+	
+	
 
 	private boolean canProduce(Pedido pedido) {
 		
@@ -268,14 +276,15 @@ public class PPA extends Thread {
 	}
 	
 	public synchronized void buildPlan() {
-		
-		if (desire == Desire.maximizeIncome) {
-			Collections.sort(plan, new SortbyPrice());
+		synchronized (plan){
+			if (desire == Desire.maximizeIncome) {
+				Collections.sort(plan, new SortbyPrice());
+			}
+			else {
+				Collections.sort(plan, new SortbyDate());
+			}
 		}
-		else {
-			Collections.sort(plan, new SortbyDate());
-		}
-		
+
 	}
 	
 	public static void main(String[] args) {

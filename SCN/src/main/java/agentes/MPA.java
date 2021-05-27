@@ -35,9 +35,9 @@ public class MPA extends Thread{
 	public MPA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		
-		this.supplierSocket = (Socket)new Socket(ini.getSupplierHost(), ini.getSupplierServerPort());
-		this.supplierObjectOutputStream = new ObjectOutputStream(this.supplierSocket.getOutputStream());
-		this.supplierObjectInputStream = new ObjectInputStream(this.supplierSocket.getInputStream());
+		//this.supplierSocket = (Socket)new Socket(ini.getSupplierHost(), ini.getSupplierServerPort());
+		//this.supplierObjectOutputStream = new ObjectOutputStream(this.supplierSocket.getOutputStream());
+		//this.supplierObjectInputStream = new ObjectInputStream(this.supplierSocket.getInputStream());
 		
 		
 		this.ssocket = new ServerSocket(ini.getMPAServerPort());
@@ -50,11 +50,6 @@ public class MPA extends Thread{
 	
 	public void run() {
 		try {
-			if (id == -1)
-				this.id =  Thread.currentThread().getId();
-			
-			if (Thread.currentThread().getId() == id) {
-			}
 			
 			Socket supplierSocket = ssocket.accept();
 			System.out.println("MPA: started");
