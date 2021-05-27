@@ -41,7 +41,7 @@ public class IniManager {
 	}
 	
 	public int getActiveThreads() {
-		return ini.get("MA","threads", Integer.class)
+		return ini.get("MA","threads", Integer.class);
 	}
 	
 	/**PPA**/
