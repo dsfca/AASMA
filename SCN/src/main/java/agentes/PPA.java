@@ -15,7 +15,7 @@ import org.ini4j.InvalidFileFormatException;
 import general.Belief;
 import general.IniManager;
 import general.Pedido;
-import general.Produto;
+import general.Material;
 import general.SortbyDate;
 import general.SortbyPrice;
 
@@ -143,33 +143,33 @@ public class PPA extends Thread {
 		String string;
 		int countA = 0, countB = 0, countC = 0, countD = 0;
 			
-		for (int i=0; i< order.getProdutos().size(); i++) 
+		for (int i=0; i< order.getMateriais().size(); i++) 
 		{
-			string = order.getProdutos().get(i).getProduto();
+			string = order.getMateriais().get(i).getMaterial();
 				
 			for(int j = 0; j < string.length(); j++) 
 			{    
 				if(string.charAt(i) == 'A')    
-					countA += order.getProdutos().get(i).getQuantidade();
+					countA += order.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(i) == 'B')
-		        	countB += order.getProdutos().get(i).getQuantidade();
+		        	countB += order.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(i) == 'C')
-		        	countC += order.getProdutos().get(i).getQuantidade();
+		        	countC += order.getMateriais().get(i).getQuantidade();
 		        else
-		            countD += order.getProdutos().get(i).getQuantidade();
+		            countD += order.getMateriais().get(i).getQuantidade();
 			}    
 		}
 			
-		List <Produto> produtos = null;
+		List <Material> produtos = null;
 			
 		if (countA > 0)
-			produtos.add(new Produto("A", countA));
+			produtos.add(new Material("A", countA));
 		if (countB > 0)
-			produtos.add(new Produto("B", countB));
+			produtos.add(new Material("B", countB));
 		if (countC > 0)
-			produtos.add(new Produto("C", countC));
+			produtos.add(new Material("C", countC));
 		if (countD > 0)
-			produtos.add(new Produto("D", countD));
+			produtos.add(new Material("D", countD));
 			
 		try {
 			mpaObjectOutputStream.writeObject(new Pedido(produtos));
@@ -204,20 +204,20 @@ public class PPA extends Thread {
 		int a = 0, b = 0, c = 0, d = 0;
 		String string;
 		
-		for (int i = 0; i < pedido.getProdutos().size(); i++) {
+		for (int i = 0; i < pedido.getMateriais().size(); i++) {
 			
-			string = pedido.getProdutos().get(i).getProduto();
+			string = pedido.getMateriais().get(i).getMaterial();
 				
 			for(int j = 0; j < string.length(); j++) 
 			{    
 				if(string.charAt(j) == 'A')    
-		            a += pedido.getProdutos().get(i).getQuantidade();
+		            a += pedido.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(j) == 'B')
-		            b += pedido.getProdutos().get(i).getQuantidade();
+		            b += pedido.getMateriais().get(i).getQuantidade();
 		        else if (string.charAt(j) == 'C')
-		            c += pedido.getProdutos().get(i).getQuantidade();
+		            c += pedido.getMateriais().get(i).getQuantidade();
 		        else
-		            d += pedido.getProdutos().get(i).getQuantidade();
+		            d += pedido.getMateriais().get(i).getQuantidade();
 		    }
 		}
 		

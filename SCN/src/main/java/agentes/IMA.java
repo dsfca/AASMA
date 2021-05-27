@@ -20,9 +20,9 @@ import org.apache.commons.io.LineIterator;
 import org.ini4j.InvalidFileFormatException;
 
 import general.IniManager;
-import general.Material;
-import general.Pedido;
 import general.Produto;
+import general.Pedido;
+import general.Material;
 
 public class IMA extends Thread {
 	
@@ -39,7 +39,7 @@ public class IMA extends Thread {
 		this.server_socket = new ServerSocket(ini.getIMAServerPort());
 		this.inventory_file = ini.getInventoryPath();
 		this.inventory = new File(ini.getInventoryPath());
-		cleanInventory();
+		//cleanInventory();
 	}
 	
 	private void newListener()
@@ -49,8 +49,9 @@ public class IMA extends Thread {
 
 	public void run() {
 		try {
+			System.out.println("EEEE");
 			Socket socket = server_socket.accept();
-			//System.out.println("IMA: Coneccao recebida de OMA");
+			System.out.println("IMA: Coneccao recebida de OMA1");
 			newListener();
 
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -70,9 +71,8 @@ public class IMA extends Thread {
 
 			}else if(object[0].equals("ri")) {
 				interactInventory(object); //list of products
-				objectOutputStream.writeObject("Removed from inventory");
 			}
-			System.out.println("IMA: " /*+ produto.toString()*/);
+			System.out.println("IMA: terminou ligacao" /*+ produto.toString()*/);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
@@ -85,8 +85,8 @@ public class IMA extends Thread {
 		HashMap <Object, Integer> quantidades = new HashMap <Object, Integer>();
 		
 		if(object[0].equals("ci")) {
-			for(int i = 0; i < object.length; i++) {
-				quantidades.put(object_pm.get(i), checkInventory(object_pm.get(i)));
+			for(Object object_: object_pm) {
+				quantidades.put(object_, checkInventory(object_));
 			}
 		}else if(object[0].equals("ai")) {
 			for(Object object_: object_pm) {
@@ -95,14 +95,22 @@ public class IMA extends Thread {
 					placeInInventory(object_);
 				} else {
 					String [] identification = getObjectId(object_);
-					replace(identification[0], quantidade_antiga, Integer.parseInt(identification[1]));
+					replace(identification[0], quantidade_antiga, Integer.parseInt(identification[1]), 0);
 				}
 			}
-		}else if(object[0].equals("ri")) {
+		}else if(object[0].equals("ri")) { //SE RETORNAR -1 É PQ NÃO EXISTEM SUFICIENTES PARA REMOVER
 			for(Object object_: object_pm) {
 				int quantidade_antiga = checkInventory(object_);
 				String [] identification = getObjectId(object_);
-				removeInventory(identification[0], String.valueOf(quantidade_antiga));
+				
+				if(String.valueOf(quantidade_antiga).equals(identification[1])) {
+					removeInventory(identification[0], String.valueOf(quantidade_antiga));
+					
+				}else if(quantidade_antiga > Integer.parseInt(identification[1])) {
+					replace(identification[0], quantidade_antiga, Integer.parseInt(identification[1]), 1);	
+				}else {
+					quantidades.put(object_, -1);
+				}
 			}
 		}
 		return quantidades;
@@ -111,10 +119,10 @@ public class IMA extends Thread {
 	//Place Final Product or Material in Inventory - DONE
 	public void placeInInventory(Object object) throws IOException {
 		String to_write = "";
-		if(object instanceof Produto) {
-			to_write = ((Produto) object).getProduto() + " " + ((Produto) object).getQuantidade() + "\n";
-		}else if(object instanceof Material) {
+		if(object instanceof Material) {
 			to_write = ((Material) object).getMaterial() + " " + ((Material) object).getQuantidade() + "\n";
+		}else if(object instanceof Produto) {
+			to_write = ((Produto) object).getProduto() + " " + ((Produto) object).getQuantidade() + "\n";
 		}
 		FileWriter fw = new FileWriter(this.inventory, true);
 		fw.write(to_write);
@@ -130,12 +138,9 @@ public class IMA extends Thread {
 		BufferedReader reader = new BufferedReader(new FileReader(inputFile));
 		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
 
-		//String lineToRemove = "bbb";
 		String currentLine;
 
 		while((currentLine = reader.readLine()) != null) {
-		    // trim newline when comparing with lineToRemove
-		    //String trimmedLine = currentLine.trim();
 		    if(currentLine.equals(object_name + " " + quantity)) continue;
 		    writer.write(currentLine + System.getProperty("line.separator"));
 		}
@@ -148,18 +153,18 @@ public class IMA extends Thread {
 	//GET OBJECT IDENTIFICATION - DONE
 	public String [] getObjectId(Object object) {
 		String [] identification = new String [2];
-		if(object instanceof Produto) {
-			identification[0] = ((Produto) object).getProduto();
-			identification[1] = String.valueOf(((Produto) object).getQuantidade());
-		}else if(object instanceof Material) {
+		if(object instanceof Material) {
 			identification[0] = ((Material) object).getMaterial();
 			identification[1] = String.valueOf(((Material) object).getQuantidade());
+		}else if(object instanceof Produto) {
+			identification[0] = ((Produto) object).getProduto();
+			identification[1] = String.valueOf(((Produto) object).getQuantidade());
 		}
 		return identification;
 	}
 
-	//REPLACE - DONE
-	public void replace(String object_name, int quantidade_antiga, int quantidade_nova) throws IOException {
+	//REPLACE - DONE mode=0=>somar; mode=1=>subtrair
+	public void replace(String object_name, int quantidade_antiga, int quantidade_nova, int mode) throws IOException {
 
 		Scanner sc = new Scanner(this.inventory);
 		StringBuffer buffer = new StringBuffer();
@@ -168,7 +173,12 @@ public class IMA extends Thread {
 		}
 		String fileContents = buffer.toString();
 		sc.close();
-		int quantidade_final = quantidade_antiga + quantidade_nova;
+		int quantidade_final = 0;
+		if(mode == 0) {
+			quantidade_final = quantidade_antiga + quantidade_nova;
+		}else if(mode == 1) {
+			quantidade_final = quantidade_antiga - quantidade_nova;
+		}
 		String oldLine = object_name + " " + quantidade_antiga;
 		String newLine = object_name + " " + quantidade_final;
 		fileContents = fileContents.replaceAll(oldLine, newLine);
@@ -184,12 +194,12 @@ public class IMA extends Thread {
 		try {
 			while (it.hasNext()) {
 				String[] line = it.nextLine().split(" ");
-				if(object instanceof Produto) {
-					if(line[0].equals(((Produto) object).getProduto())) {
+				if(object instanceof Material) {
+					if(line[0].equals(((Material) object).getMaterial())) {
 						quantidade = Integer.parseInt(line[1]);
 					}
-				}else if(object instanceof Material) {
-					if(line[0].equals(((Material) object).getMaterial())) {
+				}else if(object instanceof Produto) {
+					if(line[0].equals(((Produto) object).getProduto())) {
 						quantidade = Integer.parseInt(line[1]);
 					}
 				}
