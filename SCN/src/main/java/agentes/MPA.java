@@ -67,7 +67,12 @@ public class MPA extends Thread{
 		
 		List<Material> materials = (List<Material>) supplierObjectInputStream.readObject();
 		
-		//enviar materiais novos para o IMA
+		Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+		ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+		ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
+		
+		Object[] object = {"ai", materials};
+		imaObjectOutputStream.writeObject(object);
 		
 		queue.remove(pedido);
 
