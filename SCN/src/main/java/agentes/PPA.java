@@ -30,6 +30,10 @@ public class PPA extends Thread {
 	private ObjectOutputStream omaObjectOutputStream;
 	private ObjectInputStream omaObjectInputStream;
 	
+	private Socket mpaSocket;
+	private ObjectOutputStream mpaObjectOutputStream;
+	private ObjectInputStream mpaObjectInputStream;
+	
 	private ServerSocket ssocket;
 	private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
@@ -49,9 +53,9 @@ public class PPA extends Thread {
 	public PPA(Desire d, int n) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		
-		this.omaSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
-		this.omaObjectOutputStream = new ObjectOutputStream(this.omaSocket.getOutputStream());
-		this.omaObjectInputStream = new ObjectInputStream(this.omaSocket.getInputStream());
+		this.mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+		this.mpaObjectOutputStream = new ObjectOutputStream(this.mpaSocket.getOutputStream());
+		this.mpaObjectInputStream = new ObjectInputStream(this.mpaSocket.getInputStream());
 		
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		
@@ -166,9 +170,7 @@ public class PPA extends Thread {
 			produtos.add(new Produto("D", countD));
 			
 		try {
-			OutputStream outputStream = omaSocket.getOutputStream();
-			ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-			objectOutputStream.writeObject(new Pedido(produtos));
+			mpaObjectOutputStream.writeObject(new Pedido(produtos));
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();

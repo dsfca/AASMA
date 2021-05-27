@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 import org.ini4j.InvalidFileFormatException;
 
@@ -19,9 +20,17 @@ public class MPA extends Thread{
 	private ObjectOutputStream supplierObjectOutputStream;
 	private ObjectInputStream supplierObjectInputStream;
 	
+	private Socket ppaSocket;
+	private ObjectOutputStream ppaObjectOutputStream;
+	private ObjectInputStream ppaObjectInputStream;
+	
 	private ServerSocket ssocket;
 	private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
+	
+	private List<Pedido> queue;
+	private boolean new_deliveries;
+	private long id = -1;
 	
 	public MPA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
@@ -29,6 +38,7 @@ public class MPA extends Thread{
 		this.supplierSocket = (Socket)new Socket(ini.getSupplierHost(), ini.getSupplierServerPort());
 		this.supplierObjectOutputStream = new ObjectOutputStream(this.supplierSocket.getOutputStream());
 		this.supplierObjectInputStream = new ObjectInputStream(this.supplierSocket.getInputStream());
+		
 		
 		this.ssocket = new ServerSocket(ini.getMPAServerPort());
 	}
@@ -40,15 +50,25 @@ public class MPA extends Thread{
 	
 	public void run() {
 		try {
+			if (id == -1)
+				this.id =  Thread.currentThread().getId();
 			
-			Socket clientSocket = ssocket.accept();
+			if (Thread.currentThread().getId() == id) {
+			}
+			
+			Socket supplierSocket = ssocket.accept();
 			System.out.println("MPA: started");
 			newListener();
 			
-			ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-			ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
+			
+			
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(supplierSocket.getOutputStream());
+			ObjectInputStream objectInputStream = new ObjectInputStream(supplierSocket.getInputStream());
 			Pedido pedido = (Pedido) objectInputStream.readObject();
+			queue.add(pedido);
 			System.out.println("MPA: " + pedido.toString());
+			
+			sendOrder(pedido);
 			
 			
 		} catch (IOException | ClassNotFoundException e) {
@@ -58,14 +78,15 @@ public class MPA extends Thread{
 	}
 	
 	
-	/*
-	public void SendOrder() {
-		try {
-			Socket clientSocket = ssocket.accept();
-			newListener();
-			
-		}
+	
+	public void sendOrder(Pedido pedido) throws IOException, ClassNotFoundException {
+		this.supplierObjectOutputStream.writeObject(pedido);
+		Pedido completed = (Pedido) this.supplierObjectInputStream.readObject();
+		
+		//Send new materials to IMA
+		queue.remove(completed);
+
 	}
-	*/
+	
 
 }
