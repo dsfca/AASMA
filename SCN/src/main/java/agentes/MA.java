@@ -18,6 +18,7 @@ import java.util.List;
 import org.ini4j.InvalidFileFormatException;
 
 import general.IniManager;
+import general.Material;
 import general.Pedido;
 import general.Produto;
 
@@ -92,14 +93,14 @@ public class MA extends Thread {
 		try {
 			int sum=0;
 			int sum_aux=0;
-			List <Produto> produtoos=pedido.getProdutos();
+			List <Material> materiais = pedido.getMateriais();/*CORRIGIR PARA MATERIAL*/
 			
-			for(int i=0;i<produtoos.size();i++) {
-				for(int j=0;j<produtoos.get(i).getProduto().length();j++) {
-					sum_aux+=Character.getNumericValue(produtoos.get(i).getProduto().charAt(j))-9;
+			for(int i=0;i<materiais.size();i++) {
+				for(int j=0;j<materiais.get(i).getMaterial().length();j++) {
+					sum_aux+=Character.getNumericValue(materiais.get(i).getMaterial().charAt(j))-9;
 					
 				}
-				sum+=sum_aux*produtoos.get(i).getQuantidade();
+				sum+=sum_aux*materiais.get(i).getQuantidade();
 				sum_aux=0;
 				
 			}	

@@ -1,4 +1,4 @@
-package agentes;
+package general;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
