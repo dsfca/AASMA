@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.Timestamp;
@@ -74,14 +75,19 @@ public class OMA extends Thread {
 			Pedido pedido = (Pedido) objectInputStream.readObject();
 			System.out.println("OMA: " + pedido.toString());
 			
-			//HashMap <Produto, Integer> quantidades = queryIMAavailability(pedido);
-			//System.out.println(quantidades);
-			//(ESTIMAR DATA ENTREGA)
+			//ENVIAR IMA
+			Object [] object = new Object[2];
+			object[0] = "ai";
+			object[1] = pedido.getProdutos();
+			this.imaObjectOutputStream.writeObject(((Serializable)object));
+			//HashMap <Produto, Integer> quantidades = (HashMap<Produto, Integer>) imaObjectInputStream.readObject();
+			
+			//(ESTIMAR DATA ENTREGA
 			pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
-			//ENVIAR PPA
+			//(ENVIAR PPA
 			/**this.ppaObjectOutputStream.writeObject(pedido);*/
-			//RECEBER RESPOSTA
-			//RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
+			//(RECEBER RESPOSTA
+			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
 			
 	
 		} catch (IOException e) {
