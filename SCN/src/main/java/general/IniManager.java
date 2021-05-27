@@ -27,6 +27,23 @@ public class IniManager {
 		return ini.get("OMA","host", String.class);
 	}
 	
+	/**MA**/
+	public int getMAClientPort() {
+		return ini.get("MA","client_port", Integer.class);
+	}
+	
+	public int getMAServerPort() {
+		return ini.get("MA","server_port", Integer.class);
+	}
+	
+	public String getMAHost() {
+		return ini.get("MA","host", String.class);
+	}
+	
+	public int getActiveThreads() {
+		return ini.get("MA","threads", Integer.class)
+	}
+	
 	/**PPA**/
 	public int getPPAClientPort() {
 		return ini.get("PPA","client_port", Integer.class);

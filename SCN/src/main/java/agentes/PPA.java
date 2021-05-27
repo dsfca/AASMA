@@ -28,8 +28,6 @@ public class PPA extends Thread {
 	private ObjectInputStream mpaObjectInputStream;
 	
 	private ServerSocket ssocket;
-	private ObjectOutputStream objectOutputStream;
-	private ObjectInputStream objectInputStream;
 	
 	public Belief beliefs;
 	public Desire desire;
@@ -81,18 +79,16 @@ public class PPA extends Thread {
 				Decision();
 			}else{
 				System.out.println("Registration Thread:" + Thread.currentThread().getName());
-				while(true) {
-					System.out.println("Sou uma thread");
-					Socket clientSocket = ssocket.accept();
-					//newListener();
-					this.objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-					this.objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
-					Pedido pedido = (Pedido) objectInputStream.readObject();
+				System.out.println("Sou uma thread");
+				Socket clientSocket = ssocket.accept();
+				newListener();
+				ObjectOutputStream objectOutputStream= new ObjectOutputStream(clientSocket.getOutputStream());
+				ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
+				Pedido pedido = (Pedido) objectInputStream.readObject();
 				
-					System.out.println("PPA (" + Thread.currentThread().getName() + "): " + pedido.toString());
+				System.out.println("PPA (" + Thread.currentThread().getName() + "): " + pedido.toString());
 				
-					addToQueue(pedido);
-				}
+				addToQueue(pedido);
 			}
 	
 		} catch (IOException e) {
@@ -291,8 +287,6 @@ public class PPA extends Thread {
 			else {
 				Collections.sort(plan, new SortbyDate());
 			}
-		}
-		
 		}else if(mode == 3) { //remove
 			this.plan.remove(pedido);
 		
