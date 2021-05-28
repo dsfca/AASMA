@@ -93,10 +93,6 @@ public class IniManager {
 	}
 	
 	/**Supplier**/
-	public int getSupplierClientPort() {
-		return ini.get("Supplier","client_port", Integer.class);
-	}
-	
 	public int getSupplierServerPort() {
 		return ini.get("Supplier","server_port", Integer.class);
 	}

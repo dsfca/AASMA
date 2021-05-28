@@ -15,6 +15,7 @@ import java.sql.Timestamp;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.ini4j.InvalidFileFormatException;
@@ -46,10 +47,16 @@ public class OMA extends Thread {
 	
 	private int id;
 	
+	private int averageQueueTime;
+	private int averageQueueTimePerMaterialAvailability;
+	private int pendingOrders;
+	
 	public OMA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getOMAServerPort());
 		this.id = 0;
+		this.averageQueueTimePerMaterialAvailability = 1000;
+		this.pendingOrders = 0;
 		/**
 		this.imaSocket = (Socket)new Socket(ini.getIMAHost(), ini.getIMAServerPort());
 		this.imaObjectOutputStream = new ObjectOutputStream(this.imaSocket.getOutputStream());
@@ -96,13 +103,15 @@ public class OMA extends Thread {
 			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
 			System.out.println(quantidades);
 			//(ESTIMAR DATA ENTREGA
-			pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
+			Timestamp delivery_date = estimateDeliveryDate(pedido, quantidades);
+			pedido.setDataLimite(delivery_date);
 			//(ENVIAR PPA
 			/**ppaObjectOutputStream.writeObject(pedido);*/
 			//(RECEBER RESPOSTA
 			//Produto produto_final = objectInputStream.readObject();
 			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
 			/**objectOutputStream.writeObject(object);*/
+			pendingOrders++;
 			System.out.println("OMA" + my_id + ": Terminou");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -111,6 +120,35 @@ public class OMA extends Thread {
 			e.printStackTrace();
 		}
 	}
+	
+	private Timestamp estimateDeliveryDate(Pedido pedido, HashMap<Material, Integer> quantidades) {
+		// TODO Auto-generated method stub
+		List <Material> required_material = pedido.getMateriais();
+		
+		int estimated_production_time = 0;
+		int estimated_queue_time = 0;
+		
+		int remaining_material_quantity = 0;
+		
+		for(int i = 0; i < required_material.size(); i++) {
+			estimated_production_time += (Character.getNumericValue(required_material.get(i).getMaterial().charAt(i)) - 9) * required_material.get(i).getQuantidade();
+			//TODO after fixing PPA, maybe reajust for material availability and total price
+			//remaining_material_quantity = required_material.get(i).getQuantidade() - quantidades.get(required_material.get(i).getMaterial());
+			//remaining_material_quantity = (remaining_material_quantity < 0) ? 0 : remaining_material_quantity;
+			estimated_queue_time = pendingOrders * averageQueueTime;
+		}
+		
+		Long estimated_time = (long) (estimated_production_time + estimated_queue_time);
+		
+		Long estimated_date_in_millisec = pedido.getDataRececao().getTime() + estimated_time;
+		Timestamp estimated_date = new Timestamp(estimated_date_in_millisec);
+			
+		return estimated_date;
+	}
+
+	//TODO When an order is completed:
+	// decrement pendingOrders
+	// reajust averageQueueTime (order.queueTime() = order.totalTime() - order.productionTime())
 	
 	public void receiveFromClient() {
 		
