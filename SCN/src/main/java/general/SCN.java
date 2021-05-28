@@ -13,6 +13,7 @@ import agentes.MPA;
 import agentes.OMA;
 import agentes.PPA;
 import agentes.PPA.Desire;
+import agentes.PPA1;
 
 public class SCN extends Thread{
 	
@@ -29,7 +30,8 @@ public class SCN extends Thread{
 		try {
 			MPA mpa = new MPA();
 			mpa.start();
-			PPA ppa = new PPA(Desire.maximizeIncome, 10);
+			//PPA ppa = new PPA(Desire.maximizeIncome, 10);
+			PPA1 ppa = new PPA1();
 			ppa.start();
 			IMA ima = new IMA();
 			ima.start();
@@ -39,7 +41,7 @@ public class SCN extends Thread{
 			while(true) {
 				//CRIAR CLIENTES E PEDIDOS
 				List <Material> produtos = generateRandonProductList();
-				Pedido pedido = new Pedido(new Timestamp(System.currentTimeMillis()), produtos);
+				Pedido pedido = new Pedido(new Timestamp(System.currentTimeMillis()), produtos, clientId);
 				Client client = new Client(clientId, pedido);
 				client.start();
 				clientId++;

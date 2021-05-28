@@ -16,13 +16,15 @@ public class Pedido implements Serializable {
 	private Material produto_final;
 	private EstadoPedido estado;
 	private int totalPrice;
+	private int client_id;
 
-	public Pedido(Timestamp data_rececao, List <Material> materiais) {
+	public Pedido(Timestamp data_rececao, List <Material> materiais, int client_id) {
 		this.data_rececao = data_rececao;
 		// data limite
 		this.materiais = materiais;
 		this.estado = EstadoPedido.PEDIDO;
 		this.produto_final = null;
+		this.client_id = client_id;
 	}
 	
 	public Pedido(List <Material> materiais) {
@@ -84,12 +86,16 @@ public class Pedido implements Serializable {
 		return this.produto_final;
 	}
 	
+	public int getClientId() {
+		return this.client_id;
+	}
+	
 	public static void main(String[] args) {
 		Material prod = new Material("A", 1);
 		List <Material> produtos =  new ArrayList <Material>();
 		produtos.add(prod);
 		produtos.add(prod);
-		Pedido p = new Pedido(null, produtos);
+		Pedido p = new Pedido(null, produtos, 1);
 		System.out.println(p);
 
 	}
