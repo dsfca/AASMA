@@ -80,7 +80,6 @@ public class PPA1 extends Thread {
 				newListener();
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 				ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
-				System.out.println("PPA FIM");
 				//RECEBER BASE
 				Object [] object = (Object[]) objectInputStream.readObject();
 
@@ -199,16 +198,17 @@ public class PPA1 extends Thread {
 				}else {
 					
 					Pedido next_order = editPlan(6, null, null, 0);
-				
-					if (canProduce(next_order.getMateriais())) manufacture(next_order);
-					else{
-						if (next_order != last_order) {
-							buy(next_order.getMateriais());
-							last_order = next_order;
+					if(next_order != null) {
+						if (canProduce(next_order.getMateriais()))
+							manufacture(next_order);
+						else{
+							if (next_order != last_order) {
+								buy(next_order.getMateriais());
+								last_order = next_order;
+							}
+							editPlan(2, null, queue, 0);
 						}
-						editPlan(2, null, queue, 0);
-					}
-					
+					}	
 				}
 			}else {
 				editPlan(2, null, queue, 0);
@@ -225,9 +225,9 @@ public class PPA1 extends Thread {
 			ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
 			ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
 			
-
-			mpaObjectOutputStream.writeObject("get");
-			beliefs.quantidades = (HashMap<String, Integer>) mpaObjectInputStream.readObject();
+			Object [] object = {"get", new ArrayList<Object>()};
+			mpaObjectOutputStream.writeObject(object);
+			beliefs.quantidades = (HashMap<Material, Integer>) mpaObjectInputStream.readObject();
 			
 			
 		} catch (UnknownHostException e) {
@@ -287,11 +287,11 @@ public class PPA1 extends Thread {
 			Material current_material;
 			List<Material> to_order = null;
 			
-			for (int i = 0; i < materiais.size(); i++) {
+			for (Material material: materiais) {
 				
-				missing_quantity = materiais.get(i).getQuantidade() - beliefs.quantidades.get(materiais.get(i).getMaterial());
+				missing_quantity = material.getQuantidade() - beliefs.quantidades.get(material.getMaterial());
 				
-				current_material = new Material(materiais.get(i).getMaterial(), missing_quantity);
+				current_material = new Material(material.getMaterial(), missing_quantity);
 				
 				if (missing_quantity > 0)
 					to_order.add(current_material);	
@@ -357,7 +357,7 @@ public class PPA1 extends Thread {
 		
 		}else if(mode == 6) { //get - usado
 			if(!this.plan.isEmpty())
-			pedido = this.plan.get(index);
+				pedido = this.plan.get(index);
 		}
 		return pedido;
 	}

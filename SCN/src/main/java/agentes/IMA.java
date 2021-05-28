@@ -142,10 +142,11 @@ public class IMA extends Thread {
 		//OBTER TUDO	
 		}else if(object[0].equals("gi")) {
 			Scanner s = new Scanner(this.inventory);
-			while (s.hasNext()){
-				String material = s.next();
+			while (s.hasNextLine()){
+				String material = s.nextLine();
 				String [] q = material.split(" ");
-				quantidades.put(q[0], Integer.parseInt(q[1]));
+				Material m = new Material(q[0], Integer.parseInt(q[1]));
+				quantidades.put(m, Integer.parseInt(q[1]));
 			}
 			s.close();
 		}
