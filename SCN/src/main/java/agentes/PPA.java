@@ -76,7 +76,8 @@ public class PPA extends Thread {
 				
 				System.out.println("PPA (" + Thread.currentThread().getName() + "): " + pedido.toString());
 				
-				
+				if (desire == Desire.minimizeDeliveryTime)
+					order(pedido);
 				
 				addToQueue(pedido);
 			}
@@ -126,9 +127,9 @@ public class PPA extends Thread {
 				
 					if (canProduce(next_order)) manufacture(next_order);
 					else{
-						buildPlan();
 						if (next_order != last_order)
 							order(next_order);
+						buildPlan();
 					}
 					
 				}
