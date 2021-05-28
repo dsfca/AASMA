@@ -34,14 +34,12 @@ public class PPA extends Thread {
 	public volatile List<Pedido> queue;
 	public volatile List<Pedido> plan;
 	
-	public int n_plan;
-	
 	private Pedido last_order;
 	
 	private long id = -1;
 	
 	//setup socket for receiving orders, the agent's desire (maximize profit or minimize delivery time) and plan size
-	public PPA(Desire d, int n) throws InvalidFileFormatException, IOException {
+	public PPA(Desire d) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.queue = new ArrayList<Pedido>();
 		this.plan = new ArrayList<Pedido>();
@@ -55,7 +53,6 @@ public class PPA extends Thread {
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		
 		this.desire = d;
-		this.n_plan = n;
 		this.last_order = null;
 	}
 	
@@ -127,14 +124,9 @@ public class PPA extends Thread {
 					if (next_order != last_order)
 						order(next_order);
 				}
-				
-				if (plan.size() < this.n_plan) deliberate();
 			}
 			else{
-				deliberate();
-				synchronized(plan) {
-					if (plan.size() > 1) buildPlan();
-				}
+				buildPlan();
 			}
 		
 		}
@@ -184,7 +176,7 @@ public class PPA extends Thread {
 		
 	}
 
-	private synchronized void deliberate() {
+	private synchronized void buildPlan() {
 	
 		List<Pedido> queue_aux = queue;
 		//queue_aux.addAll(this.plan);
@@ -270,24 +262,14 @@ public class PPA extends Thread {
 		}
 		*/
 	}
-
-	public void buildPlan() {
-		editPlan(2, null, null);
-	}
 	
 	public synchronized List<Pedido> editPlan(int mode, Pedido pedido, List<Pedido> queue_aux) {
 		List<Pedido> queue_aux1 = new ArrayList<Pedido>();
 		if(mode == 1) { //equal to
 			this.plan = queue_aux.subList(0, this.queue.size());
 		
-		}else if(mode == 2) { //build plan
-			if (desire == Desire.maximizeIncome) {
-				Collections.sort(plan, new SortbyPrice());
-			}
-			else {
-				Collections.sort(plan, new SortbyDate());
-			}
-		}else if(mode == 3) { //remove
+		}
+		else if(mode == 3) { //remove
 			this.plan.remove(pedido);
 		
 		}else if(mode == 4) {
