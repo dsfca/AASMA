@@ -68,8 +68,9 @@ public class MA extends Thread {
 	
 	public void run() {
 		System.out.println("INIT: MA started");
+		incrementThreads();
 		if(this.active_threads < this.possible_threads) {
-			incrementThreads();
+			System.out.println(this.active_threads);
 			newListener();
 		}
 		try {

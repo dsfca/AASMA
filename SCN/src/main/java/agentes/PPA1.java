@@ -75,7 +75,6 @@ public class PPA1 extends Thread {
 			}else{
 				System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
 				Socket generalSocket = ssocket.accept();
-				System.out.println(generalSocket.getPort());
 				newListener();
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 				ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
