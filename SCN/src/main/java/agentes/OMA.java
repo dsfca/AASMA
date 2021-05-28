@@ -156,16 +156,16 @@ public class OMA extends Thread {
 		
 		int estimated_production_time = 0;
 		int estimated_queue_time = 0;
-		
+
 		int remaining_material_quantity = 0;
-		
-		for(int i = 0; i < required_material.size(); i++) {
-			estimated_production_time += (Character.getNumericValue(required_material.get(i).getMaterial().charAt(i)) - 9) * required_material.get(i).getQuantidade();
+
+		for(Material material: required_material) {
+			estimated_production_time += (Character.getNumericValue(material.getMaterial().charAt(0)) - 9) * material.getQuantidade();
 			estimated_queue_time = averageQueueTime;
 		}
-		
+
 		Long estimated_time = (long) (estimated_production_time + estimated_queue_time);
-		
+
 		Long estimated_date_in_millisec = pedido.getDataRececao().getTime() + estimated_time;
 		Timestamp estimated_date = new Timestamp(estimated_date_in_millisec);
 			
