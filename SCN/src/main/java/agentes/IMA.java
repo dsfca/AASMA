@@ -49,9 +49,8 @@ public class IMA extends Thread {
 
 	public void run() {
 		try {
-			System.out.println("EEEE");
 			Socket socket = server_socket.accept();
-			System.out.println("IMA: Coneccao recebida de OMA1");
+			System.out.println("IMA: Coneccao recebida de OMA");
 			newListener();
 
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
@@ -72,7 +71,7 @@ public class IMA extends Thread {
 			}else if(object[0].equals("ri")) {
 				interactInventory(object); //list of products
 			}
-			System.out.println("IMA: terminou ligacao" /*+ produto.toString()*/);
+			//System.out.println("IMA: terminou ligacao");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {

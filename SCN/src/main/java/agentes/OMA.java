@@ -43,6 +43,7 @@ public class OMA extends Thread {
 	private int requestsReceived;
 	private int requestsDelivered;
 	private int datasCumpridas;
+	private int moneyReceived;
 	
 	private int id;
 	
@@ -50,6 +51,13 @@ public class OMA extends Thread {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getOMAServerPort());
 		this.id = 0;
+		
+		//performance
+		this.requestsReceived = 0;
+		this.requestsDelivered = 0;
+		this.datasCumpridas = 0;
+		this.moneyReceived = 0;
+		
 		/**
 		this.imaSocket = (Socket)new Socket(ini.getIMAHost(), ini.getIMAServerPort());
 		this.imaObjectOutputStream = new ObjectOutputStream(this.imaSocket.getOutputStream());
@@ -82,23 +90,48 @@ public class OMA extends Thread {
 			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
 			System.out.println("OMA: connected streams successfully");
 			
-			/*Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+			Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 			ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
 			ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
-			*/
-			Pedido pedido = (Pedido) objectInputStream.readObject();
-			System.out.println("OMA" + my_id + ": " + pedido.toString());
 			
-			//ENVIAR IMA
-			/*Check*/
-			Object [] object = {"ci", pedido.getMateriais()};
-			imaObjectOutputStream.writeObject(object);
-			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
-			System.out.println(quantidades);
-			//(ESTIMAR DATA ENTREGA
-			pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
-			//(ENVIAR PPA
-			/**ppaObjectOutputStream.writeObject(pedido);*/
+			//RECEBER BASE
+			Object [] object = (Object[]) objectInputStream.readObject();
+			
+			//VINDO DO CLIENTE
+			if (object[0].equals("c")) {
+				//ENVIAR IMA
+				/** */setRequestsReceived(); 
+				Pedido pedido = (Pedido) object[1];
+				Object [] object_enviar = {"ci", pedido.getMateriais()};
+				imaObjectOutputStream.writeObject(object_enviar);
+				HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
+				System.out.println(quantidades);
+				objectOutputStream.writeObject(" a aguardar pedido");
+				//(ESTIMAR DATA ENTREGA
+				pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
+				//ENVIAR PPA
+				//ppaObjectOutputStream.writeObject(pedido);
+			
+			//VINDO DO PPA
+			}else if(object[0].equals("pronto")) {
+				Pedido pedido = (Pedido) object[1];
+				Socket enviar_cliente = (Socket) new Socket(ini.getClientHost(), ini.getClientPort() + pedido.getClientId());
+				ObjectOutputStream clientObjectOutputStream = new ObjectOutputStream(enviar_cliente.getOutputStream());
+				ObjectInputStream clientObjectInputStream = new ObjectInputStream(enviar_cliente.getInputStream());
+				//ENVIAR PEDIDO AO CLIENTE
+				clientObjectOutputStream.writeObject(pedido);
+				//RECEBER DINHEIRO
+				int final_price = (int) clientObjectInputStream.readObject();
+				/** */setRequestsDelivered();
+				/** */setMoneyReceived(final_price);
+				if(pedido.getDataLimite().compareTo(new Timestamp(System.currentTimeMillis())) > 0) {
+					/** */setDatasCumpridas();
+				}
+				clientObjectOutputStream.close();
+				clientObjectInputStream.close();
+				enviar_cliente.close();
+			}
+			
 			//(RECEBER RESPOSTA
 			//Produto produto_final = objectInputStream.readObject();
 			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
@@ -111,14 +144,6 @@ public class OMA extends Thread {
 			e.printStackTrace();
 		}
 	}
-	
-	public void receiveFromClient() {
-		
-	}
-	
-	/*public void enviarPedidoPPA(Pedido pedido) throws IOException {
-		this.objectOutputStream.writeObject(pedido);
-	}*/
 	
 	//PARA ESTIMAR DATA
 	/*public HashMap<Produto, Integer> queryIMAavailability(Pedido pedido) throws IOException, ClassNotFoundException {
@@ -149,6 +174,23 @@ public class OMA extends Thread {
 
 	}
 */
+	
+	private synchronized void setRequestsReceived() {
+		this.requestsReceived++;
+	}
+	
+	private synchronized void setRequestsDelivered() {
+		this.requestsDelivered++;
+	}
+	
+	private synchronized void setDatasCumpridas() {
+		this.datasCumpridas++;
+	}
+	
+	private synchronized void setMoneyReceived(int money) {
+		this.moneyReceived = this.moneyReceived + money;
+	}
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 

@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Base64;
 
@@ -23,21 +24,25 @@ public class Client extends Thread{
 	private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
 	
+	private ServerSocket ssocket;
+	
 	private Pedido pedido;
 
 	
 	public Client(int id, Pedido pedido) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
-		this.PORT = ini.getClientPort();
 		this.id = id;
+		this.PORT = ini.getClientPort() + this.id;
 		this.pedido = pedido;
+		this.ssocket = new ServerSocket(this.PORT);
 	}
 	
 	public void run() {
 		try {
 			startConnection();
-			enviarPedido("X");
+			enviarPedido();
 			stopConnection();
+			waitPedido();
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -56,12 +61,11 @@ public class Client extends Thread{
 		System.out.println("Coneccao iniciada lado cliente"+this.id);
 	}
 
-	public void enviarPedido(String pedido) throws IOException, ClassNotFoundException {
-        //out.println(pedido);
-		this.objectOutputStream.writeObject(this.pedido);
-        System.out.println("Cliente "+this.id+" a aguardar pedido");
+	public void enviarPedido() throws IOException, ClassNotFoundException {
+		Object [] object = {"c", this.pedido};
+		this.objectOutputStream.writeObject(object);
         String r = (String) objectInputStream.readObject();
-        System.out.println(r);
+        System.out.println("Cliente" + this.id + r);
     }
 	
 	public void stopConnection() throws IOException {
@@ -70,23 +74,22 @@ public class Client extends Thread{
         this.clientSocket.close();
     }
 
-/**
-	public void fazerPedido(String message) {
-		try {
-			PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-			OutputStream output = socket.getOutputStream();
-
-			String total_message = message;
-			String encodedString = Base64.getEncoder().encodeToString(total_message.getBytes());
-
-			PrintWriter writer = new PrintWriter(output, true);
-			writer.println(encodedString);
-
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
+	public void waitPedido() throws IOException, ClassNotFoundException {
+		Socket generalSocket = this.ssocket.accept();
+		
+		ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
+		ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
+		//RECEBER PEDIDO
+		Pedido pedido = (Pedido) objectInputStream.readObject();
+		//ENVIAR DINHEIRO
+		int total_price = pedido.getTotalPrice();
+		objectOutputStream.writeObject(total_price);
+		objectInputStream.close();
+		objectOutputStream.close();
+		generalSocket.close();
 	}
-**/
+	
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
