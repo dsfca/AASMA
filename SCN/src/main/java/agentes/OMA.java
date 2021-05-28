@@ -73,6 +73,7 @@ public class OMA extends Thread {
 	//CUIDADO COM OS OOS OIS PARA VARIOS CLIENTES
 	public void run() {
 		try {
+			System.out.println("INIT: OMA started");
 			//FROM CLIENTS
 			int my_id = ++id;
 			Socket generalSocket = ssocket.accept();
@@ -87,8 +88,8 @@ public class OMA extends Thread {
 			Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 			ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
 			ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
-
-			System.out.println("INIT: OMA connected streams successfully");
+			System.out.println("OMA FIM");
+			
 			
 			//RECEBER BASE
 			Object [] object = (Object[]) objectInputStream.readObject();

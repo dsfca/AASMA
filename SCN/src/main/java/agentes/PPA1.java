@@ -64,9 +64,9 @@ public class PPA1 extends Thread {
 
 	public void run() {
 		try {
-			
+			System.out.println("INIT: PPA started");
 			if(this.id_deliberative == -1) {
-				System.out.println("INIT: PPA delibertive id " + Thread.currentThread().getId());
+				System.out.println("INIT: PPA delibertive " + Thread.currentThread().getId());
 				this.id_deliberative = (int) Thread.currentThread().getId();
 				newListener();
 			}
@@ -74,18 +74,17 @@ public class PPA1 extends Thread {
 				Decision();
 			
 			}else{
-				System.out.println("INIT: PPA registration Thread " + Thread.currentThread().getId());
+				System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
 				Socket generalSocket = ssocket.accept();
 				System.out.println(generalSocket.getPort());
 				newListener();
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 				ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
-				
+				System.out.println("PPA FIM");
 				//RECEBER BASE
 				Object [] object = (Object[]) objectInputStream.readObject();
 
 				if(object[0].equals("oma")) {
-					System.out.println("RECEBEU OMAAAAA");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					
@@ -214,18 +213,11 @@ public class PPA1 extends Thread {
 			}else {
 				editPlan(2, null, queue, 0);
 			}
-		
 		}
 	}
 	
 
 	private void updateBeliefs() {
-		
-		String [] alfa = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
-		List<Material> materials = new ArrayList<Material>();
-		for (int i = 0; i < alfa.length; i++) {
-			materials.add( new Material(alfa[i], 1));
-		}
 		
 		try {
 			
@@ -260,7 +252,6 @@ public class PPA1 extends Thread {
 			available_quantity = beliefs.quantidades.get(current_material);
 			if (available_quantity < necessary_materials.get(i).getQuantidade())
 				return false;
-			
 		}
 		
 		return beliefs.MA_available;

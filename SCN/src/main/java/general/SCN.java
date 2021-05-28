@@ -48,7 +48,7 @@ public class SCN extends Thread{
 				client.start();
 				clientId++;
 				//sleep between 5s-10s
-				int sleepTime = (int)(Math.random()*5000 + 5000); 
+				int sleepTime = (int)(Math.random()*5000 + 2000); 
 				sleep(sleepTime);
 
 			}

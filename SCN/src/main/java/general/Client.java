@@ -54,11 +54,8 @@ public class Client extends Thread{
 	
 	public void startConnection() throws IOException {
 		this.clientSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
-		
 		this.objectOutputStream = new ObjectOutputStream(this.clientSocket.getOutputStream());
 		this.objectInputStream = new ObjectInputStream(this.clientSocket.getInputStream());
-
-		System.out.println("Coneccao iniciada lado cliente"+this.id);
 	}
 
 	public void enviarPedido() throws IOException, ClassNotFoundException {
