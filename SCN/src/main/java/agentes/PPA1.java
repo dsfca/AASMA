@@ -49,7 +49,7 @@ public class PPA1 extends Thread {
 		try {
 			
 			if(this.id_deliberative == -1) {
-				System.out.println("Delibertive id: " + Thread.currentThread().getId());
+				System.out.println("INIT: PPA delibertive id " + Thread.currentThread().getId());
 				this.id_deliberative = (int) Thread.currentThread().getId();
 				newListener();
 			}
@@ -57,7 +57,7 @@ public class PPA1 extends Thread {
 				Decision();
 			
 			}else{
-				System.out.println("Registration Thread:" + Thread.currentThread().getId());
+				System.out.println("INIT: PPA registration Thread " + Thread.currentThread().getId());
 				Socket generalSocket = ssocket.accept();
 				sleep(1000);
 				newListener();
@@ -68,6 +68,7 @@ public class PPA1 extends Thread {
 				Object [] object = (Object[]) objectInputStream.readObject();
 
 				if(object[0].equals("oma")) {
+					System.out.println("RECEBEU OMAAAAA");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					//add lista???
@@ -75,9 +76,9 @@ public class PPA1 extends Thread {
 				}else if(object[0].equals("ma_v")) { //vaziu
 					//ESPERAR E ENTREGAR MA
 					while(this.plan.isEmpty()) {
-						System.out.println("Waiting for request " + Thread.currentThread().getId());
+						System.out.println("PPA: Waiting for request " + Thread.currentThread().getId());
 						wait();
-						System.out.println("Stop wait " + Thread.currentThread().getId());
+						System.out.println("PPA: Stop wait " + Thread.currentThread().getId());
 					}
 					Pedido pedido = editPlan(5, null, null, 0); //retira pedido e devolve
 					objectOutputStream.writeObject(pedido);
@@ -123,6 +124,7 @@ public class PPA1 extends Thread {
 		if(!(pedido==null)) {
 			mpaObjectOutputStream.writeObject(pedido.getMateriais());
 			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) mpaObjectInputStream.readObject();
+			//VERIFICAR acima
 		} else {
 			System.out.println("PPA WARNING: plan still null");
 		}

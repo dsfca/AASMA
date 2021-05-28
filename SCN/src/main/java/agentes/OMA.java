@@ -94,12 +94,13 @@ public class OMA extends Thread {
 			Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
 			ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
 			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
-			System.out.println("OMA: connected streams successfully");
 			
 			Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 			ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
 			ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
 
+			System.out.println("INIT: OMA connected streams successfully");
+			
 			//RECEBER BASE
 			Object [] object = (Object[]) objectInputStream.readObject();
 			
