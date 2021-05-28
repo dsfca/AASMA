@@ -157,7 +157,7 @@ public class PPA extends Thread {
 			Object [] object_enviar = {"ci", materials};
 			imaObjectOutputStream.writeObject(object_enviar);
 			
-			beliefs.quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
+			beliefs.quantidades = (HashMap<String, Integer>) imaObjectInputStream.readObject();
 			
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
