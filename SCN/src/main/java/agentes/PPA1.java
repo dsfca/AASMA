@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,10 +14,10 @@ import java.util.List;
 import org.ini4j.InvalidFileFormatException;
 
 import agentes.PPA.Desire;
+import general.Belief;
 import general.IniManager;
 import general.Material;
 import general.Pedido;
-import general.Produto;
 import general.SortbyDate;
 import general.SortbyPrice;
 
@@ -27,11 +26,17 @@ public class PPA1 extends Thread {
 	private ServerSocket ssocket;
 	private IniManager ini;
 	private int id_deliberative;
+	
+	public Belief beliefs;
+	public Desire desire;
+	public volatile List<Pedido> queue;
 	public List<Pedido> plan;
+	private Pedido last_order;
+	private boolean MA_available;
+	public volatile List<Pedido> to_manufacture;
+	public boolean orders_to_manufacture;
 	
 	//DELIBERATIVE
-	public Desire desire;
-
 	/**
 	 * RECEBE
 	 * "oma", "ma_v", "ma_p", "new"
@@ -40,12 +45,16 @@ public class PPA1 extends Thread {
 	 * "pronto", "buy", "get", "alocar"
 	 * 	 
 	 */
+	
 	public PPA1(Desire desire) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		this.id_deliberative = -1;
 		this.plan = new ArrayList<Pedido>();
+		this.queue = new ArrayList<Pedido>();
 		this.desire = desire;
+		this.last_order = null;
+		this.beliefs = new Belief();
 	}
 	
 	private void newListener()
@@ -68,7 +77,6 @@ public class PPA1 extends Thread {
 				System.out.println("INIT: PPA registration Thread " + Thread.currentThread().getId());
 				Socket generalSocket = ssocket.accept();
 				System.out.println(generalSocket.getPort());
-				sleep(1000);
 				newListener();
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 				ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
@@ -80,30 +88,54 @@ public class PPA1 extends Thread {
 					System.out.println("RECEBEU OMAAAAA");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
-					//add lista???
+					
+					if (desire == Desire.minimizeDeliveryTime)
+						buy(pedido.getMateriais());
+					
+					addToQueue(pedido);
 				
 				}else if(object[0].equals("ma_v")) { //vaziu
 					//ESPERAR E ENTREGAR MA
-					while(this.plan.isEmpty()) {
+					
+					while(!orders_to_manufacture) {
+						MA_available = true;
 						secureWait();
 					}
-					Pedido pedido = editPlan(5, null, null, 0); //retira pedido e devolve
+					
+					Pedido pedido = to_manufacture.get(0);
+					orders_to_manufacture = false;
+					
 					objectOutputStream.writeObject(pedido);
+
+					MA_available = false;
+					
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
-				}else if(object[0].equals("ma_p")) { //com pedido
+				}else if(object[0].equals("ma_p")) {//com pedido
+					
 					Pedido pedido_final = (Pedido) object[1];
-					//ENTREGAR PROXIMO PEDIDO MA E FECHAR
-					Pedido pedido = editPlan(5, null, null, 0);
-					objectOutputStream.writeObject(pedido);
-					closeSocket(objectOutputStream, objectInputStream, generalSocket);
-					//ENTREGAR OMA
+					
 					Object [] object_final = {"pronto", pedido_final};
 					Socket omaSocket = (Socket)new Socket(ini.getOMAHost(), ini.getOMAServerPort());
 					ObjectOutputStream omaObjectOutputStream = new ObjectOutputStream(omaSocket.getOutputStream());
 					ObjectInputStream omaObjectInputStream = new ObjectInputStream(omaSocket.getInputStream());
 					omaObjectOutputStream.writeObject(object_final);
 					closeSocket(omaObjectOutputStream, omaObjectInputStream, omaSocket);
+					
+					while(orders_to_manufacture = false) {
+						MA_available = true;
+						secureWait();
+					}
+					
+					Pedido pedido = to_manufacture.remove(0);
+					
+					orders_to_manufacture = false;
+					
+					objectOutputStream.writeObject(pedido);
+
+					MA_available = false;
+					
+					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("new")) {
 					//CHEGOU MATERIAL UPDATE ALGUMA COISA...
@@ -132,36 +164,163 @@ public class PPA1 extends Thread {
 		s.close();
 	}
 	
-	public void Decision() throws UnknownHostException, IOException, ClassNotFoundException {
-		//while(true) {
-		Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
-		ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
-		ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
-		
-		Pedido pedido = editPlan(6, null, null, 0); //modo, X, X, index_do_plan
-		if(!(pedido==null)) {
-			mpaObjectOutputStream.writeObject("get");
-			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) mpaObjectInputStream.readObject();
-			//VERIFICAR acima
-		} else {
-			System.out.println("PPA WARNING: plan still null");
-		}
-		//}
+	private synchronized void addToQueue(Pedido pedido) {
+		queue.add(pedido);
 	}
 	
+	public void Decision() throws UnknownHostException, IOException, ClassNotFoundException {
+
+		while(true) {
+			
+			Pedido pedido = editPlan(6, null, null, 0);
+			
+			if (queue.isEmpty() && pedido == null)
+				continue;
+			
+			updateBeliefs();
+						
+			if (plan.isEmpty()) {
+				
+				if (desire == Desire.minimizeDeliveryTime) {
+					
+					boolean manufactured = false;
+					
+					for (int i = 0; i < plan.size(); i++) {
+						pedido = editPlan(6, null, null, 0);
+						if (canProduce(pedido.getMateriais())) {
+							manufacture(pedido);
+							manufactured = true;
+							break;
+						}
+					}
+					
+					if (!manufactured)
+						editPlan(2, null, queue, 0);
+						
+				}else {
+					
+					Pedido next_order = editPlan(6, null, null, 0);
+				
+					if (canProduce(next_order.getMateriais())) manufacture(next_order);
+					else{
+						if (next_order != last_order) {
+							buy(next_order.getMateriais());
+							last_order = next_order;
+						}
+						editPlan(2, null, queue, 0);
+					}
+					
+				}
+			}else {
+				editPlan(2, null, queue, 0);
+			}
+		
+		}
+	}
+	
+
+	private void updateBeliefs() {
+		
+		String [] alfa = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+		List<Material> materials = new ArrayList<Material>();
+		for (int i = 0; i < alfa.length; i++) {
+			materials.add( new Material(alfa[i], 1));
+		}
+		
+		try {
+			
+			Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+			ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
+			ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
+			
+
+			mpaObjectOutputStream.writeObject("get");
+			beliefs.quantidades = (HashMap<String, Integer>) mpaObjectInputStream.readObject();
+			
+			
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		beliefs.MA_available = MA_available;
+	}
+	
+	private boolean canProduce(List <Material> necessary_materials) {
+		int available_quantity;
+		
+		for (int i = 0; i < necessary_materials.size(); i++) {
+			Material current_material = new Material(necessary_materials.get(i).getMaterial(), 1);
+			available_quantity = beliefs.quantidades.get(current_material);
+			if (available_quantity < necessary_materials.get(i).getQuantidade())
+				return false;
+			
+		}
+		
+		return beliefs.MA_available;
+	}
+	
+	//TODO
+	private void manufacture(Pedido pedido) {
+		
+		try {
+			alocar(pedido.getMateriais());
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		to_manufacture.add(pedido);
+		orders_to_manufacture = true;
+		editPlan(3, pedido, null, 0);
+	}
+
 	//BUY - 2
 	public void buy(List <Material> materiais) throws UnknownHostException, IOException {
+		List <Material> required = materiais;
+		
+		if (desire == Desire.maximizeIncome) {
+			int missing_quantity;
+			Material current_material;
+			List<Material> to_order = null;
+			
+			for (int i = 0; i < materiais.size(); i++) {
+				
+				missing_quantity = materiais.get(i).getQuantidade() - beliefs.quantidades.get(materiais.get(i).getMaterial());
+				
+				current_material = new Material(materiais.get(i).getMaterial(), missing_quantity);
+				
+				if (missing_quantity > 0)
+					to_order.add(current_material);	
+			}
+			
+			required = to_order;	
+		}
+		
 		Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
 		ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
 		ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
 		
-		Object [] object_mpa = {"buy", materiais};
+		Object [] object_mpa = {"buy", required};
 		mpaObjectOutputStream.writeObject(object_mpa);
 		closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
+		
 	}
 	
 	//ALOCAR - 3
-	public void alocar(List <Material> materiais) throws UnknownHostException, IOException, ClassNotFoundException {
+	public boolean alocar(List <Material> materiais) throws UnknownHostException, IOException, ClassNotFoundException {
 		Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
 		ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
 		ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
@@ -172,25 +331,12 @@ public class PPA1 extends Thread {
 		closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
 		if (!mensagem[0].equals("Success")) {
 			List <Material> existentes = (List<Material>) mensagem[1];
-			List <Material> comprar = ajustarCompra(materiais, existentes);
-			buy(comprar);
+			buy(materiais);
+			return false;
 		}else {
-			//PERCORRER PLAN E COLOCAR ALOCADO NO PEDIDO
-			//ENVIAR PARA MA?
+			return true;
 		}
 		
-	}
-	
-	public List <Material> ajustarCompra(List <Material> materiais, List <Material> existentes) {
-		List <Material> ajustada = new ArrayList<Material>();
-		for(int i=0; i < materiais.size(); i++) {
-			if(materiais.get(i).getQuantidade() > existentes.get(i).getQuantidade()) {
-				int quantidade = materiais.get(i).getQuantidade()-existentes.get(i).getQuantidade();
-				Material m = new Material(materiais.get(i).getMaterial(), quantidade);
-				ajustada.add(m);
-			}
-		}
-		return ajustada;
 	}
 	
 	public synchronized Pedido editPlan(int mode, Pedido pedido, List<Pedido> queue_aux, int index) {

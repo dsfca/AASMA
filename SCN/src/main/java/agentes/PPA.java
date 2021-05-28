@@ -99,12 +99,12 @@ public class PPA extends Thread {
 		
 		while(true) {
 			
-			if (queue.isEmpty())
+			if (queue.isEmpty() && plan.isEmpty())
 				continue;
 			
 			updateBeliefs();
 						
-			if (plan.size() != 0) {
+			if (plan.isEmpty()) {
 				
 				if (desire == Desire.minimizeDeliveryTime) {
 					
@@ -244,6 +244,9 @@ public class PPA extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		
+		last_order = order;
 		
 	}
 

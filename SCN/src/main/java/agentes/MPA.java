@@ -63,7 +63,7 @@ public class MPA extends Thread{
 				//CONSULTAR IMA
 				Object [] object_ima = {"gi", new ArrayList<Object>()};
 				imaObjectOutputStream.writeObject(object_ima);
-				HashMap <Material, Integer> quantidades = (HashMap <Material, Integer>) imaObjectInputStream.readObject();
+				HashMap <String, Integer> quantidades = (HashMap <String, Integer>) imaObjectInputStream.readObject();
 				//ENVIAR PPA
 				objectOutputStream.writeObject(quantidades);
 				closeSocket(objectOutputStream, objectInputStream, generalSocket);

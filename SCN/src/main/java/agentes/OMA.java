@@ -104,6 +104,8 @@ public class OMA extends Thread {
 				System.out.println(quantidades);
 				//ESTIMAR DATA
 				pedido.setDataLimite(estimateDeliveryDate(pedido, quantidades));
+				//CALCULAR PREÇO
+				pedido.setTotalPrice(calculatePrice(pedido.getMateriais()));
 				//ENVIAR PPA
 				Object [] object_ppa = {"oma", pedido};
 				ppaObjectOutputStream.writeObject(object_ppa);
@@ -144,6 +146,17 @@ public class OMA extends Thread {
 		}
 	}
 	
+	private int calculatePrice(List<Material> materiais) {
+		
+		int price = 0;
+		
+		for (int i = 0; i < materiais.size(); i++) {
+			price = (Character.getNumericValue(materiais.get(i).getMaterial().charAt(0)) - 9) * 10 *materiais.get(i).getQuantidade();
+		}
+		
+		return price;
+	}
+
 	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
 		oo.close();
 		oi.close();
