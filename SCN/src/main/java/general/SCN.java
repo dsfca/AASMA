@@ -30,7 +30,6 @@ public class SCN extends Thread{
 		try {
 			MPA mpa = new MPA();
 			mpa.start();
-			//PPA ppa = new PPA(Desire.maximizeIncome, 10);
 			PPA1 ppa = new PPA1(Desire.maximizeIncome);
 			ppa.start();
 			IMA ima = new IMA();
