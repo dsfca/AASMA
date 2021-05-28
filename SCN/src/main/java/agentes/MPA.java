@@ -42,10 +42,11 @@ public class MPA extends Thread{
 			
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-			List<Material> order = (List<Material>) objectInputStream.readObject();
-			System.out.println("MPA: " + order.toString());
+			Pedido pedido = (Pedido) objectInputStream.readObject();
+			queue.add(pedido);
+			System.out.println("MPA: " + pedido.toString());
 			
-			sendOrder(order);
+			sendOrder(pedido);
 			
 			
 		} catch (IOException | ClassNotFoundException e) {
@@ -56,13 +57,13 @@ public class MPA extends Thread{
 	
 	
 	
-	public void sendOrder(List<Material> order) throws IOException, ClassNotFoundException {
+	public void sendOrder(Pedido pedido) throws IOException, ClassNotFoundException {
 		
 		Socket supplierSocket = (Socket) new Socket(ini.getSupplierHost(),ini.getSupplierServerPort());
 		ObjectOutputStream supplierObjectOutputStream = new ObjectOutputStream(supplierSocket.getOutputStream());
 		ObjectInputStream supplierObjectInputStream = new ObjectInputStream(supplierSocket.getInputStream());
 
-		supplierObjectOutputStream.writeObject(order);
+		supplierObjectOutputStream.writeObject(pedido.getMateriais());
 		
 		List<Material> materials = (List<Material>) supplierObjectInputStream.readObject();
 		
@@ -72,6 +73,8 @@ public class MPA extends Thread{
 		
 		Object[] object = {"ai", materials};
 		imaObjectOutputStream.writeObject(object);
+		
+		queue.remove(pedido);
 
 	}
 	

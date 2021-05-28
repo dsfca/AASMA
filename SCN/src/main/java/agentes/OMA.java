@@ -165,7 +165,7 @@ public class OMA extends Thread {
 			//TODO after fixing PPA, maybe reajust for material availability and total price
 			//remaining_material_quantity = required_material.get(i).getQuantidade() - quantidades.get(required_material.get(i).getMaterial());
 			//remaining_material_quantity = (remaining_material_quantity < 0) ? 0 : remaining_material_quantity;
-			estimated_queue_time = averageQueueTime;
+			estimated_queue_time = pendingOrders * averageQueueTime;
 		}
 		
 		Long estimated_time = (long) (estimated_production_time + estimated_queue_time);

@@ -13,6 +13,7 @@ import agentes.MPA;
 import agentes.OMA;
 import agentes.PPA;
 import agentes.PPA.Desire;
+import agentes.PPA1.Desire;
 
 public class SCN extends Thread{
 	
@@ -30,7 +31,7 @@ public class SCN extends Thread{
 			MPA mpa = new MPA();
 			mpa.start();
 			//PPA ppa = new PPA(Desire.maximizeIncome, 10);
-			PPA ppa = new PPA(Desire.maximizeIncome);
+			PPA1 ppa = new PPA1(Desire.maximizeIncome);
 			ppa.start();
 			IMA ima = new IMA();
 			ima.start();
