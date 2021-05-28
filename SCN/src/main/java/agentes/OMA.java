@@ -29,17 +29,7 @@ public class OMA extends Thread {
 	private IniManager ini;
 	
 	private ServerSocket ssocket;
-	/*private ObjectOutputStream objectOutputStream;
-	private ObjectInputStream objectInputStream;
 	
-	private Socket imaSocket;
-	private ObjectOutputStream imaObjectOutputStream;
-	private ObjectInputStream imaObjectInputStream;
-	
-	private Socket ppaSocket;
-	private ObjectOutputStream ppaObjectOutputStream;
-	private ObjectInputStream ppaObjectInputStream;
-	*/
 	//performance
 	private int requestsReceived;
 	private int requestsDelivered;
@@ -51,6 +41,15 @@ public class OMA extends Thread {
 	private int averageQueueTime;
 	private int averageQueueTimePerMaterialAvailability;
 	private int pendingOrders;
+	
+	/**
+	 * RECEBE
+	 * "c", "pronto"
+	 * 
+	 * ENVIA
+	 * "oma", "ci"
+	 * 	 
+	 */
 	
 	public OMA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
@@ -64,16 +63,6 @@ public class OMA extends Thread {
 		this.requestsDelivered = 0;
 		this.datasCumpridas = 0;
 		this.moneyReceived = 0;
-		/**
-		this.imaSocket = (Socket)new Socket(ini.getIMAHost(), ini.getIMAServerPort());
-		this.imaObjectOutputStream = new ObjectOutputStream(this.imaSocket.getOutputStream());
-		this.imaObjectInputStream = new ObjectInputStream(this.imaSocket.getInputStream());
-		
-		this.ssocket = new ServerSocket(ini.getOMAServerPort());
-		*/
-		/*this.ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
-		this.ppaObjectOutputStream = new ObjectOutputStream(this.ppaSocket.getOutputStream());
-		this.ppaObjectInputStream = new ObjectInputStream(this.ppaSocket.getInputStream());*/
 	}
 	
 	private void newListener()
@@ -143,7 +132,7 @@ public class OMA extends Thread {
 				closeSocket(clientObjectOutputStream, clientObjectInputStream, enviar_cliente);
 			}
 			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
-			/**objectOutputStream.writeObject(object);*/
+
 			pendingOrders++;
 			System.out.println("OMA" + my_id + ": Terminou");
 		} catch (IOException e) {

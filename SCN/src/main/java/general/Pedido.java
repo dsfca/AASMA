@@ -13,7 +13,7 @@ public class Pedido implements Serializable {
 	private Timestamp data_rececao;
 	private Timestamp data_limite;
 	private List <Material> materiais;
-	private Material produto_final;
+	private Produto produto_final;
 	private EstadoPedido estado;
 	private int totalPrice;
 	private int client_id;
@@ -58,7 +58,7 @@ public class Pedido implements Serializable {
 		this.totalPrice = totalPrice;
 	}
 	
-	public void setProdutoFinal(Material produto_final) {
+	public void setProdutoFinal(Produto produto_final) {
 		this.produto_final = produto_final;
 	}
 	/**GETTERS*/
@@ -82,7 +82,7 @@ public class Pedido implements Serializable {
 		return (this.data_rececao + " " + this.data_limite + " " + this.materiais + " " + this.estado);
 	}
 	
-	public Material getProdutoFinal() {
+	public Produto getProdutoFinal() {
 		return this.produto_final;
 	}
 	

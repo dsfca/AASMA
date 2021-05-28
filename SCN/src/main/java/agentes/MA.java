@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -34,15 +35,25 @@ public class MA extends Thread {
 	private ObjectOutputStream objectOutputStream;
 	private ObjectInputStream objectInputStream;
 	
-	private int n_threads_active;
-	private int open_threads=1;
+	private int possible_threads;
+	private int active_threads;
 	
-	
+	/**
+	 * RECEBE
+	 * "p", "ma_v", "ma_p", "new"
+	 * 
+	 * ENVIA
+	 * "pronto", "buy", "get", "alocar"
+	 * 	 
+	 */
 	
 	
 	public MA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
-		this.n_threads_active = ini.getActiveThreads();
+		this.possible_threads = ini.getActiveThreads();
+		this.active_threads = 0;
+		
+		
 		this.imaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 		this.imaObjectOutputStream = new ObjectOutputStream(this.imaSocket.getOutputStream());
 		this.imaObjectInputStream = new ObjectInputStream(this.imaSocket.getInputStream());
@@ -50,101 +61,87 @@ public class MA extends Thread {
 		this.ssocket = new ServerSocket(ini.getMAServerPort());
 	}
 	
-	private void newListener()
-	{
+	private void newListener(){
 		
 		(new Thread(this)).start();
 	}
 	
-	
-	
-	/*private void listenToPPA() {
-		try {
-			while(true) {
-				//OUVE O PPA E AVISA AS THREDS POR AQUI
-				System.out.println("a dormir");
-				Thread.sleep(100000000);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}*/
-	
-	private synchronized Pedido connect() {
-		Pedido pedido=null;
-		try {
-			
-			Socket clientSocket = ssocket.accept();
-			
-			ObjectOutputStream objectOutputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-			ObjectInputStream objectInputStream = new ObjectInputStream(clientSocket.getInputStream());
-			pedido = (Pedido) objectInputStream.readObject();
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-		return pedido;
-		
-	}
-	
-	private void produz(Pedido pedido) {
-		
-		try {
-			int sum=0;
-			int sum_aux=0;
-			List <Material> materiais = pedido.getMateriais();/*CORRIGIR PARA MATERIAL*/
-			
-			for(int i=0;i<materiais.size();i++) {
-				for(int j=0;j<materiais.get(i).getMaterial().length();j++) {
-					sum_aux+=Character.getNumericValue(materiais.get(i).getMaterial().charAt(j))-9;
-					
-				}
-				sum+=sum_aux*materiais.get(i).getQuantidade();
-				sum_aux=0;
-				
-			}	
-			System.out.println(sum);
-			Thread.sleep(sum*1000);
-			// dorme durante sum*1000 para simular
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-		
-	
-		
-	}
-	
 	public void run() {
+		incrementThreads();
+		while(this.active_threads <= this.possible_threads) {
+			newListener();
+		}
 		try {
-			/*System.out.println("aqui1");
-			/*if(initialize_socket==true) {
-				initialize_socket=false;
-				newListener();
-				listenToPPA();
-						
-				//SOCKETS
-			}*/
-			
-			if(open_threads<this.n_threads_active) {
-				open_threads++;
-				this.n_threads_active--;
-				newListener();
-			}
-			
-			while(true) {
-				Pedido pedido=connect();
-				produz(pedido);
-			}
-			
+			//PRIMEIRO PEDIDO
+			Pedido produzido = sendMA_V();
 
-		} catch (Exception e) {
+			//SEND "ma_p"
+			while(true) {
+				Object [] object_p = {"ma_p", produzido};
+				Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+				ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
+				ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
+				ppaObjectOutputStream.writeObject(object_p);
+				Pedido novo = (Pedido) ppaObjectInputStream.readObject();
+				closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
+
+				produzido = produzir(novo);
+			}
+
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
+
+	public Pedido sendMA_V() throws UnknownHostException, IOException, ClassNotFoundException {
+		Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+		ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
+		ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
+		
+		//SEND "ma_v"
+		Object [] object_v = {"ma_v"};
+		ppaObjectOutputStream.writeObject(object_v);
+		Pedido p = (Pedido) ppaObjectInputStream.readObject();
+		Pedido produzido = produzir(p);
+		closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
+		return produzido;
+	}
 	
+	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
+		oo.close();
+		oi.close();
+		s.close();
+	}
+
+	public synchronized void incrementThreads() {
+		this.active_threads++;
+	}
+	
+	private Pedido produzir(Pedido pedido) {
+		int wait_time = 0;
+		String produto_final = "";
+		
+		for (Material material: pedido.getMateriais()) {
+			wait_time += ((Character.getNumericValue(material.getMaterial().charAt(0)) - 9)
+					* material.getQuantidade());
+			produto_final = produto_final + material.getMaterial() + material.getQuantidade();
+		}
+		try {
+			Thread.sleep(wait_time * 1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		Produto produto = new Produto(produto_final, 1);
+		pedido.setProdutoFinal(produto);
+		return pedido;
+	}
 	
 	public static void main(String[] args) {
+		
 	}
 
 }

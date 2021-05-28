@@ -32,6 +32,14 @@ public class PPA1 extends Thread {
 	//DELIBERATIVE
 	public Desire desire;
 
+	/**
+	 * RECEBE
+	 * "oma", "ma_v", "ma_p", "new"
+	 * 
+	 * ENVIA
+	 * "pronto", "buy", "get", "alocar"
+	 * 	 
+	 */
 	public PPA1(Desire desire) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
@@ -76,16 +84,14 @@ public class PPA1 extends Thread {
 				}else if(object[0].equals("ma_v")) { //vaziu
 					//ESPERAR E ENTREGAR MA
 					while(this.plan.isEmpty()) {
-						System.out.println("PPA: Waiting for request " + Thread.currentThread().getId());
-						wait();
-						System.out.println("PPA: Stop wait " + Thread.currentThread().getId());
+						secureWait();
 					}
 					Pedido pedido = editPlan(5, null, null, 0); //retira pedido e devolve
 					objectOutputStream.writeObject(pedido);
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("ma_p")) { //com pedido
-					Pedido pedido_final = (Pedido) objectInputStream.readObject();
+					Pedido pedido_final = (Pedido) object[1];
 					//ENTREGAR PROXIMO PEDIDO MA E FECHAR
 					Pedido pedido = editPlan(5, null, null, 0);
 					objectOutputStream.writeObject(pedido);
@@ -97,6 +103,10 @@ public class PPA1 extends Thread {
 					ObjectInputStream omaObjectInputStream = new ObjectInputStream(omaSocket.getInputStream());
 					omaObjectOutputStream.writeObject(object_final);
 					closeSocket(omaObjectOutputStream, omaObjectInputStream, omaSocket);
+				
+				}else if(object[0].equals("new")) {
+					//CHEGOU MATERIAL UPDATE ALGUMA COISA...
+					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				}
 			}
 		} catch (InterruptedException e) {
@@ -106,6 +116,13 @@ public class PPA1 extends Thread {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public synchronized void secureWait() throws InterruptedException {
+		System.out.println("PPA: Waiting for request " + Thread.currentThread().getId());
+		wait();
+		System.out.println("PPA: Stop wait " + Thread.currentThread().getId());
+	
 	}
 	
 	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
@@ -122,13 +139,57 @@ public class PPA1 extends Thread {
 		
 		Pedido pedido = editPlan(6, null, null, 0); //modo, X, X, index_do_plan
 		if(!(pedido==null)) {
-			mpaObjectOutputStream.writeObject(pedido.getMateriais());
+			mpaObjectOutputStream.writeObject("get");
 			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) mpaObjectInputStream.readObject();
 			//VERIFICAR acima
 		} else {
 			System.out.println("PPA WARNING: plan still null");
 		}
 		//}
+	}
+	
+	//BUY - 2
+	public void buy(List <Material> materiais) throws UnknownHostException, IOException {
+		Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+		ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
+		ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
+		
+		Object [] object_mpa = {"buy", materiais};
+		mpaObjectOutputStream.writeObject(object_mpa);
+		closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
+	}
+	
+	//ALOCAR - 3
+	public void alocar(List <Material> materiais) throws UnknownHostException, IOException, ClassNotFoundException {
+		Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+		ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
+		ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
+		
+		Object [] object_mpa = {"alocar", materiais};
+		mpaObjectOutputStream.writeObject(object_mpa);
+		Object [] mensagem = (Object[]) mpaObjectInputStream.readObject();
+		closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
+		if (!mensagem[0].equals("Success")) {
+			List <Material> existentes = (List<Material>) mensagem[1];
+			List <Material> comprar = ajustarCompra(materiais, existentes);
+			buy(comprar);
+		}else {
+			//PERCORRER PLAN E COLOCAR ALOCADO NO PEDIDO
+			//ENVIAR PARA MA?
+		}
+		
+	}
+	
+	public List <Material> ajustarCompra(List <Material> materiais, List <Material> existentes) {
+		List <Material> ajustada = new ArrayList<Material>();
+		for(int i=0; i < materiais.size(); i++) {
+			if(materiais.get(i).getQuantidade() > existentes.get(i).getQuantidade()) {
+				int quantidade = materiais.get(i).getQuantidade()-existentes.get(i).getQuantidade();
+				Material m = new Material(materiais.get(i).getMaterial(), quantidade);
+				ajustada.add(m);
+			}
+		}
+		return ajustada;
 	}
 	
 	public synchronized Pedido editPlan(int mode, Pedido pedido, List<Pedido> queue_aux, int index) {

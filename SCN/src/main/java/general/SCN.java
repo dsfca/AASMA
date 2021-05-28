@@ -9,6 +9,7 @@ import java.util.Random;
 import org.ini4j.InvalidFileFormatException;
 
 import agentes.IMA;
+import agentes.MA;
 import agentes.MPA;
 import agentes.OMA;
 import agentes.PPA1;
@@ -36,6 +37,8 @@ public class SCN extends Thread{
 			ima.start();
 			OMA oma = new OMA();
 			oma.start();
+			MA ma = new MA();
+			ma.start();
 			
 			while(true) {
 				//CRIAR CLIENTES E PEDIDOS

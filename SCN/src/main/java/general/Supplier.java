@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.ini4j.InvalidFileFormatException;
@@ -31,39 +32,56 @@ public class Supplier extends Thread{
 		try {
 			Socket socket = server_socket.accept();
 			newListener();
-			
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
 			
-			List<Material> material = (List<Material>) objectInputStream.readObject();
+			List <Material> material = (List<Material>) objectInputStream.readObject();
 			
 			produce(material);
 			
-			objectOutputStream.writeObject(material);
+			/*SEND TO MPA*/
+			Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+			ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
+			ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
 			
+			Object [] object = {"new", material};
+			mpaObjectOutputStream.writeObject(object);
+			closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
+			closeSocket(objectOutputStream, objectInputStream, socket);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	public void produce(List<Material> material) {
+	public void produce(List<Material> materials) {
 		int wait_time = 0;
 		
-		for (int i = 0; i < material.size(); i++) {
-			wait_time += Character.getNumericValue(material.get(i).getMaterial().charAt(0)) - 9;
+		for (Material material: materials) {
+			wait_time += ((Character.getNumericValue(material.getMaterial().charAt(0)) - 9)
+					* material.getQuantidade());
 		}
-		
 		try {
 			Thread.sleep(wait_time * 1000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-			
+		}	
+	}
+	
+	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
+		oo.close();
+		oi.close();
+		s.close();
+	}
+	
+	public static void main(String [] args) throws InvalidFileFormatException, IOException {
+		Supplier s = new Supplier();
+		List <Material> m = new ArrayList<Material>();
+		Material m1 = new Material("B", 1);
+		m.add(m1);
+		s.produce(m);
 	}
 	
 	

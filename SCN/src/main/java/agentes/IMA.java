@@ -64,11 +64,15 @@ public class IMA extends Thread {
 				objectOutputStream.writeObject(quantidades);
 
 			}else if(object[0].equals("ai")) {
-				interactInventory(object);
 				objectOutputStream.writeObject("Added to inventory");
 
 			}else if(object[0].equals("ri")) {
-				interactInventory(object);
+				HashMap <Object, Integer> quantidades = interactInventory(object);
+				objectOutputStream.writeObject(quantidades);
+			
+			}else if(object[0].equals("gi") ) {
+				HashMap <Object, Integer> quantidades = interactInventory(object);
+				objectOutputStream.writeObject(quantidades);
 			}
 			closeSocket(objectOutputStream, objectInputStream, socket);
 			System.out.println("IMA: terminou ligacao");
@@ -89,11 +93,11 @@ public class IMA extends Thread {
 		List <Object> object_pm = (List<Object>) object[1];
 		HashMap <Object, Integer> quantidades = new HashMap <Object, Integer>();
 		
-		if(object[0].equals("ci")) {
+		if(object[0].equals("ci")) { //USADO
 			for(Object object_: object_pm) {
 				quantidades.put(object_, checkInventory(object_));
 			}
-		}else if(object[0].equals("ai")) {
+		}else if(object[0].equals("ai")) { //USADO
 			for(Object object_: object_pm) {
 				int quantidade_antiga = checkInventory(object_);
 				if(quantidade_antiga == 0) {
@@ -103,20 +107,47 @@ public class IMA extends Thread {
 					replace(identification[0], quantidade_antiga, Integer.parseInt(identification[1]), 0);
 				}
 			}
-		}else if(object[0].equals("ri")) { //SE RETORNAR -1 É PQ NÃO EXISTEM SUFICIENTES PARA REMOVER
+		//ALOCAR
+		}else if(object[0].equals("ri")) { //JÁ NAO->SE RETORNAR -1 É PQ NÃO EXISTEM SUFICIENTES PARA REMOVER
+			int falha = 0;
 			for(Object object_: object_pm) {
 				int quantidade_antiga = checkInventory(object_);
 				String [] identification = getObjectId(object_);
-				
-				if(String.valueOf(quantidade_antiga).equals(identification[1])) {
-					removeInventory(identification[0], String.valueOf(quantidade_antiga));
-					
-				}else if(quantidade_antiga > Integer.parseInt(identification[1])) {
-					replace(identification[0], quantidade_antiga, Integer.parseInt(identification[1]), 1);	
-				}else {
-					quantidades.put(object_, -1);
+
+				if(quantidade_antiga < Integer.parseInt(identification[1])) {
+					falha = 1;
 				}
 			}
+			if(falha == 0) {
+				for(Object object_: object_pm) {
+					int quantidade_antiga = checkInventory(object_);
+					String [] identification = getObjectId(object_);
+					
+					if(String.valueOf(quantidade_antiga).equals(identification[1])) {
+						removeInventory(identification[0], String.valueOf(quantidade_antiga));
+						
+					}else if(quantidade_antiga > Integer.parseInt(identification[1])) {
+						replace(identification[0], quantidade_antiga, Integer.parseInt(identification[1]), 1);	
+					}else {
+						quantidades.put(object_, quantidade_antiga);
+					}
+				}
+			} else {
+				for(Object object_: object_pm) {
+					int quantidade_antiga = checkInventory(object_);
+					String [] identification = getObjectId(object_);
+					quantidades.put(object_, quantidade_antiga);
+				}
+			}
+		//OBTER TUDO	
+		}else if(object[0].equals("gi")) {
+			Scanner s = new Scanner(this.inventory);
+			while (s.hasNext()){
+				String material = s.next();
+				String [] q = material.split(" ");
+				quantidades.put(q[0], Integer.parseInt(q[1]));
+			}
+			s.close();
 		}
 		return quantidades;
 	}

@@ -5,7 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.ini4j.InvalidFileFormatException;
 
@@ -21,6 +25,15 @@ public class MPA extends Thread{
 	
 	private List<Pedido> queue;
 	
+	/**
+	 * RECEBE
+	 * "get", "buy", "alocar", "new"
+	 * 
+	 * ENVIA
+	 * "gi", "buy", "ri", "ai"
+	 * 	 
+	 */
+	
 	public MPA() throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getMPAServerPort());
@@ -33,47 +46,98 @@ public class MPA extends Thread{
 	
 	public void run() {
 		try {
-			
-			Socket socket = ssocket.accept();
-			System.out.println("MPA: started");
+			Socket generalSocket = ssocket.accept();
 			newListener();
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
+			ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
 			
+			Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+			ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
 			
+			System.out.println("INIT: MPA connected streams successfully");
+		
+			Object [] object = (Object[]) objectInputStream.readObject();
 			
-			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
-			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-			List<Material> order = (List<Material>) objectInputStream.readObject();
-			System.out.println("MPA: " + order.toString());
+			if (object[0].equals("get")) {
+				//CONSULTAR IMA
+				Object [] object_ima = {"gi", new ArrayList<Object>()};
+				imaObjectOutputStream.writeObject(object_ima);
+				HashMap <Material, Integer> quantidades = (HashMap <Material, Integer>) imaObjectInputStream.readObject();
+				//ENVIAR PPA
+				objectOutputStream.writeObject(quantidades);
+				closeSocket(objectOutputStream, objectInputStream, generalSocket);
+				closeSocket(imaObjectOutputStream, imaObjectInputStream, imaSocket);
 			
-			sendOrder(order);
+			}else if(object[0].equals("buy")) {
+				List <Material> comprar = (List<Material>) object[1];
+				//COMPRAR SUPPLIER
+				Socket supSocket = (Socket) new Socket(ini.getSupplierHost(), ini.getSupplierServerPort());
+				ObjectOutputStream supObjectOutputStream = new ObjectOutputStream(supSocket.getOutputStream());
+				ObjectInputStream supObjectInputStream = new ObjectInputStream(supSocket.getInputStream());
+				supObjectOutputStream.writeObject(comprar);
+				closeSocket(supObjectOutputStream, supObjectInputStream, supSocket);
 			
+			}else if(object[0].equals("alocar")) {
+				//GET PPA
+				List <Material> materiais = (List <Material>) object[1];
+				//IMA
+				Object [] object_ima = {"ri", materiais};
+				imaObjectOutputStream.writeObject(object_ima);
+				HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
+				//ANSWER PPA
+				List <Material> materiais_existentes = new ArrayList<Material>();
+				String mensagem = "";
+				if(quantidades != null) {
+					materiais_existentes = getListFromHashMap(quantidades, materiais);
+					mensagem = "Failure";
+				}else {
+					mensagem = "Success";
+				}
+				Object [] resposta_ppa = {mensagem, materiais_existentes};
+				objectOutputStream.writeObject(resposta_ppa);
+			    System.out.println("MPA: Materiais quant" + materiais_existentes);
+			    closeSocket(objectOutputStream, objectInputStream, generalSocket);
+			    closeSocket(imaObjectOutputStream, imaObjectInputStream, imaSocket);
 			
+			}else if(object[0].equals("new")) {
+				List <Material> materiais = (List<Material>) object[1];
+				closeSocket(objectOutputStream, objectInputStream, generalSocket);
+				//ENVIAR IMA
+				Object [] object_ima = {"ai", materiais};
+				imaObjectOutputStream.writeObject(object_ima);
+				if(imaObjectInputStream.readObject().equals("Added to inventory")) {
+					closeSocket(imaObjectOutputStream, imaObjectInputStream, imaSocket);
+					//ENVIAR PPA
+					Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+					ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
+					ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
+					Object [] object_ppa = {"new"};
+					ppaObjectOutputStream.writeObject(object_ppa);
+					closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
+				} else {
+					System.out.println("MPA WARNING: Erro ao adicionar novo material ao inventario");
+				}
+			}
 		} catch (IOException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	
-	
-	public void sendOrder(List<Material> order) throws IOException, ClassNotFoundException {
+	public List <Material> getListFromHashMap(HashMap <Material, Integer> quantidades, List <Material> materiais) {
+		Iterator it = quantidades.entrySet().iterator();
 		
-		Socket supplierSocket = (Socket) new Socket(ini.getSupplierHost(),ini.getSupplierServerPort());
-		ObjectOutputStream supplierObjectOutputStream = new ObjectOutputStream(supplierSocket.getOutputStream());
-		ObjectInputStream supplierObjectInputStream = new ObjectInputStream(supplierSocket.getInputStream());
-
-		supplierObjectOutputStream.writeObject(order);
-		
-		List<Material> materials = (List<Material>) supplierObjectInputStream.readObject();
-		
-		Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
-		ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
-		ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
-		
-		Object[] object = {"ai", materials};
-		imaObjectOutputStream.writeObject(object);
-
+		while (it.hasNext()) {
+	        Map.Entry pair = (Map.Entry)it.next();
+	        Material m = new Material(((Material) pair.getKey()).getMaterial(), (int) pair.getValue());
+	        materiais.add(m);
+	    }
+		return materiais;
 	}
 	
-
+	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
+		oo.close();
+		oi.close();
+		s.close();
+	}
 }

@@ -87,6 +87,7 @@ public class Client extends Thread{
 		objectInputStream.close();
 		objectOutputStream.close();
 		generalSocket.close();
+		System.out.println("CLIENTE RECEBEU!!!!");
 	}
 	
 	
