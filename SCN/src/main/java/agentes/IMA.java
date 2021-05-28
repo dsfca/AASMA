@@ -55,7 +55,6 @@ public class IMA extends Thread {
 
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-			/**List <Object> request = (List<Object>) objectInputStream.readObject();*/
 
 			//RECEBER NA SERVER SOCKET: OMA ou MPA
 			Object [] object = (Object[]) objectInputStream.readObject();
@@ -65,18 +64,25 @@ public class IMA extends Thread {
 				objectOutputStream.writeObject(quantidades);
 
 			}else if(object[0].equals("ai")) {
-				interactInventory(object); //list of products
+				interactInventory(object);
 				objectOutputStream.writeObject("Added to inventory");
 
 			}else if(object[0].equals("ri")) {
-				interactInventory(object); //list of products
+				interactInventory(object);
 			}
-			//System.out.println("IMA: terminou ligacao");
+			closeSocket(objectOutputStream, objectInputStream, socket);
+			System.out.println("IMA: terminou ligacao");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
+		oo.close();
+		oi.close();
+		s.close();
 	}
 
 	public synchronized HashMap <Object, Integer> interactInventory(Object[] object) throws IOException {

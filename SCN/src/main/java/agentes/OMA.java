@@ -112,15 +112,21 @@ public class OMA extends Thread {
 				imaObjectOutputStream.writeObject(object_enviar);
 				HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
 				System.out.println(quantidades);
-				objectOutputStream.writeObject(" a aguardar pedido");
-				//(ESTIMAR DATA ENTREGA
+				//ESTIMAR DATA
 				pedido.setDataLimite(new Timestamp(System.currentTimeMillis()+10000));
 				//ENVIAR PPA
-				//ppaObjectOutputStream.writeObject(pedido);
+				Object [] object_ppa = {"oma", pedido};
+				ppaObjectOutputStream.writeObject(object_ppa);
+				//CLIENTE AGUARDE
+				objectOutputStream.writeObject(" a aguardar pedido");
+				closeSocket(objectOutputStream, objectInputStream, generalSocket);
+				closeSocket(imaObjectOutputStream, imaObjectInputStream, imaSocket);
+				closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
 			
 			//VINDO DO PPA
 			}else if(object[0].equals("pronto")) {
 				Pedido pedido = (Pedido) object[1];
+				closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				Socket enviar_cliente = (Socket) new Socket(ini.getClientHost(), ini.getClientPort() + pedido.getClientId());
 				ObjectOutputStream clientObjectOutputStream = new ObjectOutputStream(enviar_cliente.getOutputStream());
 				ObjectInputStream clientObjectInputStream = new ObjectInputStream(enviar_cliente.getInputStream());
@@ -133,12 +139,8 @@ public class OMA extends Thread {
 				if(pedido.getDataLimite().compareTo(new Timestamp(System.currentTimeMillis())) > 0) {
 					/** */setDatasCumpridas();
 				}
-				clientObjectOutputStream.close();
-				clientObjectInputStream.close();
-				enviar_cliente.close();
+				closeSocket(clientObjectOutputStream, clientObjectInputStream, enviar_cliente);
 			}
-			//(RECEBER RESPOSTA
-			//Produto produto_final = objectInputStream.readObject();
 			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
 			/**objectOutputStream.writeObject(object);*/
 			pendingOrders++;
@@ -149,6 +151,12 @@ public class OMA extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {
+		oo.close();
+		oi.close();
+		s.close();
 	}
 
 	private Timestamp estimateDeliveryDate(Pedido pedido, HashMap<Material, Integer> quantidades) {
