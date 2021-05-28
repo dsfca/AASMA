@@ -58,14 +58,13 @@ public class MPA extends Thread{
 			
 			System.out.println("MPA FIM");
 		
-			//System.out.println("FFFFF" + objectInputStream.readObject());
 			Object [] object = (Object[]) objectInputStream.readObject();
 			
 			if (object[0].equals("get")) {
 				//CONSULTAR IMA
 				Object [] object_ima = {"gi", new ArrayList<Object>()};
 				imaObjectOutputStream.writeObject(object_ima);
-				HashMap <String, Integer> quantidades = (HashMap <String, Integer>) imaObjectInputStream.readObject();
+				HashMap <Object, Integer> quantidades = (HashMap <Object, Integer>) imaObjectInputStream.readObject();
 				//ENVIAR PPA
 				objectOutputStream.writeObject(quantidades);
 				closeSocket(objectOutputStream, objectInputStream, generalSocket);

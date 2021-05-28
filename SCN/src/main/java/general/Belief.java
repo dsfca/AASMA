@@ -6,7 +6,7 @@ public class Belief {
 	
 	public Belief(){}
 	
-	public HashMap<String, Integer> quantidades;
+	public HashMap<Material, Integer> quantidades;
 	
 	public boolean MA_available;
 	

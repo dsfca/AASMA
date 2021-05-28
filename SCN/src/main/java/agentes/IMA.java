@@ -144,8 +144,11 @@ public class IMA extends Thread {
 			Scanner s = new Scanner(this.inventory);
 			while (s.hasNext()){
 				String material = s.next();
+				System.out.println("MMMM" + material);
 				String [] q = material.split(" ");
-				quantidades.put(q[0], Integer.parseInt(q[1]));
+				System.out.println(q[1]);
+				Material m = new Material(q[0], Integer.parseInt(q[1]));
+				quantidades.put(m, Integer.parseInt(q[1]));
 			}
 			s.close();
 		}
