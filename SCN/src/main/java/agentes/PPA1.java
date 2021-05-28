@@ -13,7 +13,6 @@ import java.util.List;
 
 import org.ini4j.InvalidFileFormatException;
 
-import agentes.PPA.Desire;
 import general.Belief;
 import general.IniManager;
 import general.Material;
