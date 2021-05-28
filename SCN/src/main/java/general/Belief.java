@@ -1,12 +1,11 @@
 package general;
+
+import java.util.HashMap;
+
 public class Belief {
 	
-	public int a_level;
-	public int b_level;
-	public int c_level;
-	public int d_level;
+	public HashMap<Material, Integer> quantidades;
 	
 	public boolean MA_available;
-	public boolean new_deliveries;
 	
 }
