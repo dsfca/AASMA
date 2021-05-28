@@ -81,16 +81,6 @@ public class OMA extends Thread {
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
 			
-			Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
-			ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
-			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
-			
-			Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
-			ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
-			ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
-			System.out.println("OMA FIM");
-			
-			
 			//RECEBER BASE
 			Object [] object = (Object[]) objectInputStream.readObject();
 			
@@ -100,15 +90,26 @@ public class OMA extends Thread {
 				/** */setRequestsReceived(); 
 				Pedido pedido = (Pedido) object[1];
 				Object [] object_enviar = {"ci", pedido.getMateriais()};
+				
+				Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+				ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+				ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
+				
 				imaObjectOutputStream.writeObject(object_enviar);
 				HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
 				System.out.println(quantidades);
 				//ESTIMAR DATA
 				pedido.setDataLimite(estimateDeliveryDate(pedido, quantidades));
-				//CALCULAR PREÇO
+				//CALCULAR PREï¿½O
 				pedido.setTotalPrice(calculatePrice(pedido.getMateriais()));
 				//ENVIAR PPA
 				Object [] object_ppa = {"oma", pedido};
+				
+				Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
+				ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
+				ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
+				System.out.println("OMA FIM");
+				
 				ppaObjectOutputStream.writeObject(object_ppa);
 				//CLIENTE AGUARDE
 				objectOutputStream.writeObject(" a aguardar pedido");

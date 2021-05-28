@@ -70,7 +70,6 @@ public class MA extends Thread {
 		System.out.println("INIT: MA started");
 		incrementThreads();
 		if(this.active_threads < this.possible_threads) {
-			System.out.println(this.active_threads);
 			newListener();
 		}
 		try {
@@ -86,7 +85,7 @@ public class MA extends Thread {
 				ppaObjectOutputStream.writeObject(object_p);
 				Pedido novo = (Pedido) ppaObjectInputStream.readObject();
 				closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
-
+				System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
 				produzido = produzir(novo);
 			}
 
