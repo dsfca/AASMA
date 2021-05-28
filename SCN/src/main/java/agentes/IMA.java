@@ -49,13 +49,13 @@ public class IMA extends Thread {
 
 	public void run() {
 		try {
+			System.out.println("INIT: IMA started");
 			Socket socket = server_socket.accept();
-			System.out.println("IMA: Coneccao recebida de OMA");
 			newListener();
 
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-
+			System.out.println("IMA FIM");
 			//RECEBER NA SERVER SOCKET: OMA ou MPA
 			Object [] object = (Object[]) objectInputStream.readObject();
 

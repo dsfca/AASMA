@@ -55,9 +55,9 @@ public class PPA1 extends Thread {
 
 	public void run() {
 		try {
-			
+			System.out.println("INIT: PPA started");
 			if(this.id_deliberative == -1) {
-				System.out.println("INIT: PPA delibertive id " + Thread.currentThread().getId());
+				System.out.println("INIT: PPA delibertive " + Thread.currentThread().getId());
 				this.id_deliberative = (int) Thread.currentThread().getId();
 				newListener();
 			}
@@ -65,19 +65,16 @@ public class PPA1 extends Thread {
 				Decision();
 			
 			}else{
-				System.out.println("INIT: PPA registration Thread " + Thread.currentThread().getId());
+				System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
 				Socket generalSocket = ssocket.accept();
-				System.out.println(generalSocket.getPort());
-				sleep(1000);
 				newListener();
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 				ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
-				
+				System.out.println("PPA FIM");
 				//RECEBER BASE
 				Object [] object = (Object[]) objectInputStream.readObject();
 
 				if(object[0].equals("oma")) {
-					System.out.println("RECEBEU OMAAAAA");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					//add lista???
@@ -140,7 +137,8 @@ public class PPA1 extends Thread {
 		
 		Pedido pedido = editPlan(6, null, null, 0); //modo, X, X, index_do_plan
 		if(!(pedido==null)) {
-			mpaObjectOutputStream.writeObject("get");
+			Object [] object = {"get"};
+			mpaObjectOutputStream.writeObject(object);
 			HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) mpaObjectInputStream.readObject();
 			//VERIFICAR acima
 		} else {

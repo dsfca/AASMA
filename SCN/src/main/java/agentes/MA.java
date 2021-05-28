@@ -67,8 +67,9 @@ public class MA extends Thread {
 	}
 	
 	public void run() {
-		incrementThreads();
-		while(this.active_threads <= this.possible_threads) {
+		System.out.println("INIT: MA started");
+		if(this.active_threads < this.possible_threads) {
+			incrementThreads();
 			newListener();
 		}
 		try {
@@ -101,7 +102,7 @@ public class MA extends Thread {
 		Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 		ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
 		ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
-		
+		System.out.println("MA FIM");
 		//SEND "ma_v"
 		Object [] object_v = {"ma_v"};
 		ppaObjectOutputStream.writeObject(object_v);

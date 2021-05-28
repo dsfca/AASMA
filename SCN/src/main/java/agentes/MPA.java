@@ -46,6 +46,7 @@ public class MPA extends Thread{
 	
 	public void run() {
 		try {
+			System.out.println("INIT: MPA started");
 			Socket generalSocket = ssocket.accept();
 			newListener();
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
@@ -55,8 +56,9 @@ public class MPA extends Thread{
 			ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
 			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
 			
-			System.out.println("INIT: MPA connected streams successfully");
+			System.out.println("MPA FIM");
 		
+			//System.out.println("FFFFF" + objectInputStream.readObject());
 			Object [] object = (Object[]) objectInputStream.readObject();
 			
 			if (object[0].equals("get")) {
