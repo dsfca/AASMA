@@ -34,7 +34,7 @@ public class SCN extends Thread{
 			ppa.start();
 			IMA ima = new IMA();
 			ima.start();
-			OMA oma = new OMA();
+			OMA oma = new OMA(0.5f);
 			oma.start();
 			
 			while(true) {
