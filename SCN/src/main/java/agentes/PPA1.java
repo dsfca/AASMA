@@ -198,16 +198,17 @@ public class PPA1 extends Thread {
 				}else {
 					
 					Pedido next_order = editPlan(6, null, null, 0);
-				
-					if (canProduce(next_order.getMateriais())) manufacture(next_order);
-					else{
-						if (next_order != last_order) {
-							buy(next_order.getMateriais());
-							last_order = next_order;
+					if(next_order != null) {
+						if (canProduce(next_order.getMateriais()))
+							manufacture(next_order);
+						else{
+							if (next_order != last_order) {
+								buy(next_order.getMateriais());
+								last_order = next_order;
+							}
+							editPlan(2, null, queue, 0);
 						}
-						editPlan(2, null, queue, 0);
-					}
-					
+					}	
 				}
 			}else {
 				editPlan(2, null, queue, 0);
@@ -356,7 +357,7 @@ public class PPA1 extends Thread {
 		
 		}else if(mode == 6) { //get - usado
 			if(!this.plan.isEmpty())
-			pedido = this.plan.get(index);
+				pedido = this.plan.get(index);
 		}
 		return pedido;
 	}
