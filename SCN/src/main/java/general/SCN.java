@@ -11,8 +11,7 @@ import org.ini4j.InvalidFileFormatException;
 import agentes.IMA;
 import agentes.MPA;
 import agentes.OMA;
-import agentes.PPA;
-import agentes.PPA.Desire;
+import agentes.PPA1;
 import agentes.PPA1.Desire;
 
 public class SCN extends Thread{
