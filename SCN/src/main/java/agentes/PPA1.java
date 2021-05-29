@@ -172,7 +172,7 @@ public class PPA1 extends Thread {
 
 			updateBeliefs();			
 			if (!plan.isEmpty()) {
->
+
 				if (desire == Desire.minimizeDeliveryTime) {
 					boolean manufactured = false;
 					for (int i = 0; i < plan.size(); i++) {
