@@ -177,10 +177,12 @@ public class PPA1 extends Thread {
 					boolean manufactured = false;
 					for (int i = 0; i < plan.size(); i++) {
 						pedido = editPlan(6, null, null, 0);
-						if (canProduce(pedido.getMateriais())) {
-							manufacture(pedido);
-							manufactured = true;
-							break;
+						if(pedido!=null) {
+							if (canProduce(pedido.getMateriais())) {
+								manufacture(pedido);
+								manufactured = true;
+								break;
+							}
 						}
 					}
 					
@@ -226,13 +228,10 @@ public class PPA1 extends Thread {
 			
 			
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
