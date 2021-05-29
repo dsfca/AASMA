@@ -49,13 +49,11 @@ public class IMA extends Thread {
 
 	public void run() {
 		try {
-			System.out.println("INIT: IMA started");
 			Socket socket = server_socket.accept();
 			newListener();
 
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream());
-			System.out.println("IMA FIM");
 			//RECEBER NA SERVER SOCKET: OMA ou MPA
 			Object [] object = (Object[]) objectInputStream.readObject();
 
@@ -75,7 +73,6 @@ public class IMA extends Thread {
 				objectOutputStream.writeObject(quantidades);
 			}
 			closeSocket(objectOutputStream, objectInputStream, socket);
-			System.out.println("IMA: terminou ligacao");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
@@ -108,7 +105,7 @@ public class IMA extends Thread {
 				}
 			}
 		//ALOCAR
-		}else if(object[0].equals("ri")) { //JÁ NAO->SE RETORNAR -1 É PQ NÃO EXISTEM SUFICIENTES PARA REMOVER
+		}else if(object[0].equals("ri")) { //JÃ� NAO->SE RETORNAR -1 Ã‰ PQ NÃƒO EXISTEM SUFICIENTES PARA REMOVER
 			int falha = 0;
 			for(Object object_: object_pm) {
 				int quantidade_antiga = checkInventory(object_);
@@ -145,7 +142,8 @@ public class IMA extends Thread {
 			while (s.hasNextLine()){
 				String material = s.nextLine();
 				String [] q = material.split(" ");
-				Material m = new Material(q[0], Integer.parseInt(q[1]));
+				Material m = new Material(q[0], 1);
+				//System.out.println(m);
 				quantidades.put(m, Integer.parseInt(q[1]));
 			}
 			s.close();

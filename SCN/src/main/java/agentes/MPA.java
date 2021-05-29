@@ -46,13 +46,10 @@ public class MPA extends Thread{
 	
 	public void run() {
 		try {
-			System.out.println("INIT: MPA started");
 			Socket generalSocket = ssocket.accept();
 			newListener();
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
-			
-			System.out.println("MPA FIM");
 		
 			Object [] object = (Object[]) objectInputStream.readObject();
 			

@@ -107,6 +107,7 @@ public class MA extends Thread {
 		Object [] object_v = {"ma_v"};
 		ppaObjectOutputStream.writeObject(object_v);
 		Pedido p = (Pedido) ppaObjectInputStream.readObject();
+		System.out.println("Jeff");
 		Pedido produzido = produzir(p);
 		closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
 		return produzido;

@@ -188,8 +188,8 @@ public class OMA extends Thread {
 		List <Material> required_material = pedido.getMateriais();
 		int estimated_production_time = 0;
 		
-		for(int i = 0; i < required_material.size(); i++) {
-			estimated_production_time += (Character.getNumericValue(required_material.get(i).getMaterial().charAt(i)) - 9) * required_material.get(i).getQuantidade();
+		for(Material material: required_material) {
+			estimated_production_time += (Character.getNumericValue(material.getMaterial().charAt(0)) - 9) * material.getQuantidade();
 		}
 		
 		long delivery_time = deliver_date.getTime() - pedido.getDataRececao().getTime();
