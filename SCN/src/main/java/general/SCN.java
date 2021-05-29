@@ -28,10 +28,11 @@ public class SCN extends Thread{
 		int clientId = 1;
 		
 		Desire d = Desire.maximizeIncome;
+		
 		if(ini.getMode().equals("minimizeDeliveryTime")) {
-			d = Desire.maximizeIncome;
+			d = Desire.minimizeDeliveryTime;
 		}else if(ini.getMode().equals("maximizeIncome")) {
-			d= Desire.minimizeDeliveryTime;
+			d= Desire.maximizeIncome;
 		}
 		
 		try {
