@@ -33,7 +33,7 @@ public class PPA extends Thread {
 	private Pedido last_order;
 	private boolean MA_available;
 	public volatile List<Pedido> to_manufacture;
-	public boolean orders_to_manufacture;
+	public boolean existe_pedidos;
 	
 	//DELIBERATIVE
 	/**
@@ -82,26 +82,33 @@ public class PPA extends Thread {
 				Object [] object = (Object[]) objectInputStream.readObject();
 
 				if(object[0].equals("oma")) {
+					System.out.println("PPA: oma");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					
-					buy(pedido.getMateriais());
+					if (desire == Desire.minimizeDeliveryTime)
+						buy(pedido.getMateriais());
 					
 					addToQueue(pedido);
 				
 				}else if(object[0].equals("ma_v")) { //vaziu
+					System.out.println("PPA: ma_v");
 					//ESPERAR E ENTREGAR MA
-					while(!orders_to_manufacture) {
+					while(!existe_pedidos) {
 						MA_available = true;
 						secureWait();
 					}
 					Pedido pedido = to_manufacture.get(0);
+					existe_pedidos = false;
+					
 					objectOutputStream.writeObject(pedido);
+
+					MA_available = false;
 					
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("ma_p")) {//com pedido
-					
+					System.out.println("PPA: ma_p");
 					Pedido pedido_final = (Pedido) object[1];
 					
 					Object [] object_final = {"pronto", pedido_final};
@@ -110,16 +117,24 @@ public class PPA extends Thread {
 					ObjectInputStream omaObjectInputStream = new ObjectInputStream(omaSocket.getInputStream());
 					omaObjectOutputStream.writeObject(object_final);
 					closeSocket(omaObjectOutputStream, omaObjectInputStream, omaSocket);
-
-					secureWait();
-
+					
+					while(existe_pedidos = false) {
+						MA_available = true;
+						secureWait();
+					}
+					
 					Pedido pedido = to_manufacture.remove(0);
-
+					
+					existe_pedidos = false;
+					
 					objectOutputStream.writeObject(pedido);
+
+					MA_available = false;
 					
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("new")) {
+					System.out.println("PPA: new");
 					//CHEGOU MATERIAL UPDATE ALGUMA COISA...
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				}
@@ -248,7 +263,7 @@ public class PPA extends Thread {
 		}
 		
 		to_manufacture.add(pedido);
-		orders_to_manufacture = true;
+		existe_pedidos = true;
 		editPlan(3, pedido, null, 0);
 	}
 
