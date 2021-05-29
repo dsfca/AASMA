@@ -71,6 +71,7 @@ public class PPA1 extends Thread {
 			}
 			if (Thread.currentThread().getId() == this.id_deliberative) {
 				Decision();
+				System.out.println("yo");
 			
 			}else{
 				System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
@@ -176,7 +177,7 @@ public class PPA1 extends Thread {
 			
 			updateBeliefs();
 						
-			if (plan.isEmpty()) {
+			if (!plan.isEmpty()) {
 				
 				if (desire == Desire.minimizeDeliveryTime) {
 					
@@ -191,8 +192,10 @@ public class PPA1 extends Thread {
 						}
 					}
 					
-					if (!manufactured)
-						editPlan(2, null, queue, 0);
+					if (!manufactured) {
+						editPlan(1, null, queue, 0);
+						editPlan(2, null, null, 0);
+					}
 						
 				}else {
 					
@@ -205,12 +208,14 @@ public class PPA1 extends Thread {
 								buy(next_order.getMateriais());
 								last_order = next_order;
 							}
-							editPlan(2, null, queue, 0);
+							editPlan(1, null, queue, 0);
+							editPlan(2, null, null, 0);
 						}
 					}	
 				}
 			}else {
-				editPlan(2, null, queue, 0);
+				editPlan(1, null, queue, 0);
+				editPlan(2, null, null, 0);
 			}
 		}
 	}
