@@ -38,6 +38,8 @@ public class SCN extends Thread{
 			oma.start();
 			MA ma = new MA();
 			ma.start();
+			Supplier s = new Supplier();
+			s.start();
 			
 			while(true) {
 				//CRIAR CLIENTES E PEDIDOS

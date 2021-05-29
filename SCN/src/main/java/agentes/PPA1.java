@@ -242,10 +242,10 @@ public class PPA1 extends Thread {
 	private boolean canProduce(List <Material> necessary_materials) {
 		int available_quantity;
 		
-		for (int i = 0; i < necessary_materials.size(); i++) {
-			Material current_material = new Material(necessary_materials.get(i).getMaterial(), 1);
+		for (Material material: necessary_materials) {
+			Material current_material = new Material(material.getMaterial(), 1);
 			available_quantity = beliefs.quantidades.get(current_material);
-			if (available_quantity < necessary_materials.get(i).getQuantidade())
+			if (available_quantity < material.getQuantidade())
 				return false;
 		}
 		
