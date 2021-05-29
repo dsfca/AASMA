@@ -20,7 +20,7 @@ import general.Pedido;
 import general.SortbyDate;
 import general.SortbyPrice;
 
-public class PPA1 extends Thread {
+public class PPA extends Thread {
 	
 	private ServerSocket ssocket;
 	private IniManager ini;
@@ -45,7 +45,7 @@ public class PPA1 extends Thread {
 	 * 	 
 	 */
 	
-	public PPA1(Desire desire) throws InvalidFileFormatException, IOException {
+	public PPA(Desire desire) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		this.id_deliberative = -1;
@@ -85,8 +85,7 @@ public class PPA1 extends Thread {
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					
-					if (desire == Desire.minimizeDeliveryTime)
-						buy(pedido.getMateriais());
+					buy(pedido.getMateriais());
 					
 					addToQueue(pedido);
 				
@@ -97,11 +96,7 @@ public class PPA1 extends Thread {
 						secureWait();
 					}
 					Pedido pedido = to_manufacture.get(0);
-					orders_to_manufacture = false;
-					
 					objectOutputStream.writeObject(pedido);
-
-					MA_available = false;
 					
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
@@ -115,19 +110,12 @@ public class PPA1 extends Thread {
 					ObjectInputStream omaObjectInputStream = new ObjectInputStream(omaSocket.getInputStream());
 					omaObjectOutputStream.writeObject(object_final);
 					closeSocket(omaObjectOutputStream, omaObjectInputStream, omaSocket);
-					
-					while(orders_to_manufacture = false) {
-						MA_available = true;
-						secureWait();
-					}
-					
-					Pedido pedido = to_manufacture.remove(0);
-					
-					orders_to_manufacture = false;
-					
-					objectOutputStream.writeObject(pedido);
 
-					MA_available = false;
+					secureWait();
+
+					Pedido pedido = to_manufacture.remove(0);
+
+					objectOutputStream.writeObject(pedido);
 					
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
@@ -347,7 +335,7 @@ public class PPA1 extends Thread {
 	public enum Desire {maximizeIncome, minimizeDeliveryTime};
 
 	public static void main(String[] args) throws InvalidFileFormatException, IOException {
-		PPA1 ppa = new PPA1(Desire.maximizeIncome);
+		PPA ppa = new PPA(Desire.maximizeIncome);
 		ppa.start();
 
 	}

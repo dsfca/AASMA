@@ -90,7 +90,7 @@ public class OMA extends Thread {
 				/** */setRequestsReceived(); 
 				Pedido pedido = (Pedido) object[1];
 				Object [] object_enviar = {"ci", pedido.getMateriais()};
-				
+	
 				Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
 				ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
 				ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
@@ -149,13 +149,10 @@ public class OMA extends Thread {
 	}
 	
 	private int calculatePrice(List<Material> materiais) {
-		
 		int price = 0;
-		
-		for (int i = 0; i < materiais.size(); i++) {
-			price = (Character.getNumericValue(materiais.get(i).getMaterial().charAt(0)) - 9) * 10 *materiais.get(i).getQuantidade();
+		for (Material material: materiais) {
+			price = price + (Character.getNumericValue(material.getMaterial().charAt(0)) - 9) * 10 * material.getQuantidade();
 		}
-		
 		return price;
 	}
 
@@ -166,7 +163,6 @@ public class OMA extends Thread {
 	}
 
 	private Timestamp estimateDeliveryDate(Pedido pedido, HashMap<Material, Integer> quantidades) {
-		// TODO Auto-generated method stub
 		List <Material> required_material = pedido.getMateriais();
 		
 		int estimated_production_time = 0;
