@@ -1,4 +1,7 @@
 package agentes;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -17,6 +20,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.WindowConstants;
 
 import org.ini4j.InvalidFileFormatException;
 
@@ -40,6 +49,12 @@ public class OMA extends Thread {
 	
 	private float discount_factor;
 	private int averageQueueTime;
+	
+	private JFrame frame;
+	private JTextField recebidos_value;
+	private JTextField entregues_value;
+	private JTextField datas_value;
+	private JTextField money_value;
 
 	
 	/**
@@ -63,6 +78,60 @@ public class OMA extends Thread {
 		this.datasCumpridas = 0;
 		this.moneyReceived = 0;
 		this.discount_factor = df;
+		showUI();
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		frame.setSize(400, 450);
+		frame.setResizable(false);
+		frame.setVisible(true);
+		
+	}
+
+	public void showUI(){
+		this.frame = new JFrame("Performance");
+		frame.setLayout(new FlowLayout());
+		JPanel painel = new JPanel();
+		painel.setLayout(new GridLayout(5,1));
+
+		//Recebidos
+		JLabel recebidos = new JLabel("Pedidos Recebidos:");
+		this.recebidos_value = new JTextField();
+		JPanel center = new JPanel();
+		center.setLayout(new GridLayout(1,2));
+		center.add(recebidos);
+		center.add(recebidos_value);
+		//Entregues
+		JLabel entregues = new JLabel("Pedidos Entregues:");
+		this.entregues_value = new JTextField();
+		JPanel center2 = new JPanel();
+		center2.setLayout(new GridLayout(1,2));
+		center2.add(entregues);
+		center2.add(entregues_value);
+		//Datas Cumpridas
+		JLabel datas = new JLabel("Datas Cumpridas:");
+		this.datas_value = new JTextField();
+		JPanel center3 = new JPanel();
+		center3.setLayout(new GridLayout(1,2));
+		center3.add(datas);
+		center3.add(datas_value);
+		//Dinheiro Recebido
+		JLabel money = new JLabel("Dinheiro Recebido:");
+		this.money_value = new JTextField();
+		JPanel center4 = new JPanel();
+		center4.setLayout(new GridLayout(1,2));
+		center4.add(money);
+		center4.add(money_value);
+		//Dinheiro Recebido
+		JLabel modo = new JLabel("Modo de Operacao: "+String.valueOf(ini.getMode()));
+		JPanel center5 = new JPanel();
+		center5.setLayout(new GridLayout(1,1));
+		center5.add(modo);
+
+		painel.add(center);
+		painel.add(center2);
+		painel.add(center3);
+		painel.add(center4);
+		painel.add(center5);
+		frame.add(painel);
 	}
 	
 	private void newListener()
@@ -73,7 +142,6 @@ public class OMA extends Thread {
 	//CUIDADO COM OS OOS OIS PARA VARIOS CLIENTES
 	public void run() {
 		try {
-			System.out.println("INIT: OMA started");
 			//FROM CLIENTS
 			int my_id = ++id;
 			Socket generalSocket = ssocket.accept();
@@ -97,7 +165,7 @@ public class OMA extends Thread {
 				
 				imaObjectOutputStream.writeObject(object_enviar);
 				HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
-				System.out.println(quantidades);
+				//System.out.println(quantidades);
 				//ESTIMAR DATA
 				pedido.setDataLimite(estimateDeliveryDate(pedido, quantidades));
 				//CALCULAR PRE�O
@@ -108,8 +176,8 @@ public class OMA extends Thread {
 				Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 				ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
 				ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
-				System.out.println("OMA FIM");
 				
+				System.out.println("Cliente"+ pedido.getClientId() + " fez pedido: " + pedido.toString());
 				ppaObjectOutputStream.writeObject(object_ppa);
 				//CLIENTE AGUARDE
 				objectOutputStream.writeObject(" a aguardar pedido");
@@ -125,6 +193,7 @@ public class OMA extends Thread {
 				ObjectOutputStream clientObjectOutputStream = new ObjectOutputStream(enviar_cliente.getOutputStream());
 				ObjectInputStream clientObjectInputStream = new ObjectInputStream(enviar_cliente.getInputStream());
 				//ENVIAR PEDIDO AO CLIENTE
+				System.out.println("Pedido " + pedido.getProdutoFinal().getProduto() + " entregue a cliente" + pedido.getClientId());
 				clientObjectOutputStream.writeObject(pedido);
 				//RECEBER DINHEIRO
 				int final_price = (int) clientObjectInputStream.readObject();
@@ -139,12 +208,10 @@ public class OMA extends Thread {
 			}
 			//(RESPONDER CLIENTE (SERIA GIRO UMA INTERFACE COM OS CLIENTES EM ESPERA?)
 
-			System.out.println("OMA" + my_id + ": Terminou");
 		} catch (IOException e) {
-			e.printStackTrace();
+			
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 	
@@ -202,57 +269,26 @@ public class OMA extends Thread {
 		
 		averageQueueTime += discount_factor*deviation;
 	}
-	public void receiveFromClient() {
-		
-	}
-	
-	/*public void enviarPedidoPPA(Pedido pedido) throws IOException {
-		this.objectOutputStream.writeObject(pedido);
-	}*/
-	
-	//PARA ESTIMAR DATA
-	/*public HashMap<Produto, Integer> queryIMAavailability(Pedido pedido) throws IOException, ClassNotFoundException {
-		HashMap <Produto, Integer> quantidades = new HashMap<Produto, Integer>();
-		
-		for (Produto produto: pedido.getProdutos()) {
-			this.imaObjectOutputStream.writeObject(produto);
-			int quantidade = (Integer) this.imaObjectInputStream.readObject();
-			System.out.println(quantidade);
-			quantidades.put(produto, quantidade);
-		}
-		return quantidades;
-	}*/
-/*	
-	public void sendMessage(String message) {
-        try {
-        	OutputStream output = socket.getOutputStream();
-        	
-        	String total_message = message;
-        	String encodedString = Base64.getEncoder().encodeToString(total_message.getBytes());
-        	
-        	PrintWriter writer = new PrintWriter(output, true);
-        	writer.println(encodedString);
-            
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-	}
-*/
 	
 	private synchronized void setRequestsReceived() {
 		this.requestsReceived++;
+		this.recebidos_value.setText(String.valueOf(requestsReceived));
 	}
 	
 	private synchronized void setRequestsDelivered() {
 		this.requestsDelivered++;
+		this.entregues_value.setText(String.valueOf(requestsDelivered));
 	}
 	
 	private synchronized void setDatasCumpridas() {
 		this.datasCumpridas++;
+		this.datas_value.setText(String.valueOf(datasCumpridas));
 	}
 	
 	private synchronized void setMoneyReceived(int money) {
 		this.moneyReceived = this.moneyReceived + money;
+		this.money_value.setText(String.valueOf(moneyReceived));
+
 	}
 	
 	public static void main(String[] args) {

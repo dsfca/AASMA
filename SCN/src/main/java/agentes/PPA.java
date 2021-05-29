@@ -33,7 +33,7 @@ public class PPA extends Thread {
 	private Pedido last_order;
 	private boolean MA_available;
 	public volatile List<Pedido> to_manufacture;
-	public boolean existe_pedidos;
+	public boolean orders_to_manufacture;
 	
 	//DELIBERATIVE
 	/**
@@ -51,6 +51,7 @@ public class PPA extends Thread {
 		this.id_deliberative = -1;
 		this.plan = new ArrayList<Pedido>();
 		this.queue = new ArrayList<Pedido>();
+		this.to_manufacture = new ArrayList<Pedido>();
 		this.desire = desire;
 		this.last_order = null;
 		this.beliefs = new Belief();
@@ -63,9 +64,8 @@ public class PPA extends Thread {
 
 	public void run() {
 		try {
-			System.out.println("INIT: PPA started");
 			if(this.id_deliberative == -1) {
-				System.out.println("INIT: PPA delibertive " + Thread.currentThread().getId());
+				//System.out.println("INIT: PPA delibertive " + Thread.currentThread().getId());
 				this.id_deliberative = (int) Thread.currentThread().getId();
 				newListener();
 			}
@@ -73,7 +73,7 @@ public class PPA extends Thread {
 				Decision();
 			
 			}else{
-				System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
+				//System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
 				Socket generalSocket = ssocket.accept();
 				newListener();
 				ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
@@ -82,7 +82,6 @@ public class PPA extends Thread {
 				Object [] object = (Object[]) objectInputStream.readObject();
 
 				if(object[0].equals("oma")) {
-					System.out.println("PPA: oma");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					
@@ -92,14 +91,12 @@ public class PPA extends Thread {
 					addToQueue(pedido);
 				
 				}else if(object[0].equals("ma_v")) { //vaziu
-					System.out.println("PPA: ma_v");
 					//ESPERAR E ENTREGAR MA
-					while(!existe_pedidos) {
-						MA_available = true;
-						secureWait();
-					}
-					Pedido pedido = to_manufacture.get(0);
-					existe_pedidos = false;
+					MA_available = true;
+					secureWait();
+					
+					Pedido pedido = to_manufacture.remove(0);
+					orders_to_manufacture = false;
 					
 					objectOutputStream.writeObject(pedido);
 
@@ -108,7 +105,7 @@ public class PPA extends Thread {
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("ma_p")) {//com pedido
-					System.out.println("PPA: ma_p");
+					
 					Pedido pedido_final = (Pedido) object[1];
 					
 					Object [] object_final = {"pronto", pedido_final};
@@ -118,14 +115,13 @@ public class PPA extends Thread {
 					omaObjectOutputStream.writeObject(object_final);
 					closeSocket(omaObjectOutputStream, omaObjectInputStream, omaSocket);
 					
-					while(existe_pedidos = false) {
-						MA_available = true;
-						secureWait();
-					}
+
+					MA_available = true;
+					secureWait();
 					
 					Pedido pedido = to_manufacture.remove(0);
 					
-					existe_pedidos = false;
+					orders_to_manufacture = false;
 					
 					objectOutputStream.writeObject(pedido);
 
@@ -134,24 +130,23 @@ public class PPA extends Thread {
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("new")) {
-					System.out.println("PPA: new");
 					//CHEGOU MATERIAL UPDATE ALGUMA COISA...
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				}
 			}
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 	
 	public synchronized void secureWait() throws InterruptedException {
-		System.out.println("PPA: Waiting for request " + Thread.currentThread().getId());
+		//System.out.println("PPA: Waiting for request " + Thread.currentThread().getId());
 		wait();
-		System.out.println("PPA: Stop wait " + Thread.currentThread().getId());
+		//System.out.println("PPA: Stop wait " + Thread.currentThread().getId());
 	
 	}
 	
@@ -171,20 +166,30 @@ public class PPA extends Thread {
 			Pedido pedido = editPlan(6, null, null, 0);
 			if (queue.isEmpty() && pedido == null)
 				continue;
+
 			updateBeliefs();			
-			if (plan.isEmpty()) {
+			if (!plan.isEmpty()) {
+
 				if (desire == Desire.minimizeDeliveryTime) {
 					boolean manufactured = false;
-					for (int i = 0; i < plan.size(); i++) {
+					Pedido p = editPlan(4, null, null, 0);
+					
+					for (int i = 0; i < p.getTotalPrice(); i++) {
 						pedido = editPlan(6, null, null, 0);
-						if (canProduce(pedido.getMateriais())) {
-							manufacture(pedido);
-							manufactured = true;
-							break;
+						if(pedido!=null) {
+							if (canProduce(pedido.getMateriais())) {
+								manufacture(pedido);
+								manufactured = true;
+								break;
+							}
 						}
 					}
-					if (!manufactured)
-						editPlan(2, null, queue, 0);
+					
+					if (!manufactured) {
+						editPlan(1, null, queue, 0);
+						editPlan(2, null, null, 0);
+					}
+						
 				}else {
 					Pedido next_order = editPlan(6, null, null, 0);
 					if(next_order != null) {
@@ -195,12 +200,14 @@ public class PPA extends Thread {
 								buy(next_order.getMateriais());
 								last_order = next_order;
 							}
-							editPlan(2, null, queue, 0);
+							editPlan(1, null, queue, 0);
+							editPlan(2, null, null, 0);
 						}
 					}	
 				}
 			}else {
-				editPlan(2, null, queue, 0);
+				editPlan(1, null, queue, 0);
+				editPlan(2, null, null, 0);
 			}
 		}
 	}
@@ -220,26 +227,23 @@ public class PPA extends Thread {
 			
 			
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		
 		beliefs.MA_available = MA_available;
 	}
 	
 	private boolean canProduce(List <Material> necessary_materials) {
-		int available_quantity;
+		int available_quantity = 0;
 		
-		for (int i = 0; i < necessary_materials.size(); i++) {
-			Material current_material = new Material(necessary_materials.get(i).getMaterial(), 1);
-			available_quantity = beliefs.quantidades.get(current_material);
-			if (available_quantity < necessary_materials.get(i).getQuantidade())
+		for (Material material: necessary_materials) {
+			available_quantity = 0;
+			Material current_material = new Material(material.getMaterial(), 1);
+			//System.out.println(current_material);
+			if (beliefs.quantidades.containsKey(current_material))
+				available_quantity = beliefs.quantidades.get(current_material);
+			if (available_quantity > material.getQuantidade())
 				return false;
 		}
 		
@@ -252,19 +256,16 @@ public class PPA extends Thread {
 		try {
 			alocar(pedido.getMateriais());
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		to_manufacture.add(pedido);
-		existe_pedidos = true;
 		editPlan(3, pedido, null, 0);
+		
 	}
 
 	//BUY - 2
@@ -272,26 +273,34 @@ public class PPA extends Thread {
 		List <Material> required = materiais;
 		
 		if (desire == Desire.maximizeIncome) {
-			int missing_quantity;
-			Material current_material;
+			int missing_quantity = 0;
+			Material current_material = null;
 			List<Material> to_order = null;
 			for (Material material: materiais) {
-				missing_quantity = material.getQuantidade() - beliefs.quantidades.get(material.getMaterial());
-				current_material = new Material(material.getMaterial(), missing_quantity);
-				if (missing_quantity > 0)
+
+				if (beliefs.quantidades.containsKey(material.getMaterial()))
+					missing_quantity = beliefs.quantidades.get(material.getMaterial()) - material.getQuantidade();
+
+				if (missing_quantity > 0) {
+					current_material = new Material(material.getMaterial(), missing_quantity);
 					to_order.add(current_material);	
+				}
 			}
-			
+
 			required = to_order;	
 		}
 		
-		Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
-		ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
-		ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
-		
-		Object [] object_mpa = {"buy", required};
-		mpaObjectOutputStream.writeObject(object_mpa);
-		closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
+		if (required != null){
+
+			Socket mpaSocket = (Socket)new Socket(ini.getMPAHost(), ini.getMPAServerPort());
+			ObjectOutputStream mpaObjectOutputStream = new ObjectOutputStream(mpaSocket.getOutputStream());
+			ObjectInputStream mpaObjectInputStream = new ObjectInputStream(mpaSocket.getInputStream());
+			
+			System.out.println("A comprar material...");
+			Object [] object_mpa = {"buy", required};
+			mpaObjectOutputStream.writeObject(object_mpa);
+			closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
+		}	
 		
 	}
 	
@@ -307,20 +316,34 @@ public class PPA extends Thread {
 		closeSocket(mpaObjectOutputStream, mpaObjectInputStream, mpaSocket);
 		if (!mensagem[0].equals("Success")) {
 			List <Material> existentes = (List<Material>) mensagem[1];
-			buy(materiais);
-			return false;
+			System.out.println("A consultar inventario..." + existentes);
+            List <Material> comprar = ajustarCompra(materiais, existentes);
+            buy(comprar);
+            return false;
 		}else {
 			return true;
 		}
 		
 	}
 	
+	public List <Material> ajustarCompra(List <Material> materiais, List <Material> existentes) {
+        List <Material> ajustada = new ArrayList<Material>();
+        for(int i=0; i < materiais.size(); i++) {
+            if(materiais.get(i).getQuantidade() > existentes.get(i).getQuantidade()) {
+                int quantidade = materiais.get(i).getQuantidade()-existentes.get(i).getQuantidade();
+                Material m = new Material(materiais.get(i).getMaterial(), quantidade);
+                ajustada.add(m);
+            }
+        }
+        return ajustada;
+    }
+	
 	public synchronized Pedido editPlan(int mode, Pedido pedido, List<Pedido> queue_aux, int index) {
 		if(mode == 1) { //equal to
 			this.plan.clear();
 			this.plan.addAll(queue_aux);
-			notify();
-		
+			//notify();
+
 		}else if(mode == 2) { //build plan
 			if (this.desire == Desire.maximizeIncome) {
 				Collections.sort(plan, new SortbyPrice());
@@ -330,10 +353,12 @@ public class PPA extends Thread {
 			}
 		}else if(mode == 3) { //remove
 			this.plan.remove(pedido);
+			notify();
 		
 		}else if(mode == 4) { //add
-			this.plan.add(pedido);
-			notify();
+			int s = this.plan.size();
+			pedido = new Pedido(new ArrayList<Material>());
+			pedido.setTotalPrice(s);
 		
 		}else if(mode == 5) { //retirar e remover - usado
 			Pedido pedido_aux = this.plan.get(0);

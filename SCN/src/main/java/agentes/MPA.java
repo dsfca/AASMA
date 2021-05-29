@@ -100,7 +100,7 @@ public class MPA extends Thread{
 				}
 				Object [] resposta_ppa = {mensagem, materiais_existentes};
 				objectOutputStream.writeObject(resposta_ppa);
-			    System.out.println("MPA: Materiais quant" + materiais_existentes);
+			    //System.out.println("MPA: Materiais quant" + materiais_existentes);
 			    closeSocket(objectOutputStream, objectInputStream, generalSocket);
 			    closeSocket(imaObjectOutputStream, imaObjectInputStream, imaSocket);
 			
@@ -129,19 +129,19 @@ public class MPA extends Thread{
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 	
 	public List <Material> getListFromHashMap(HashMap <Material, Integer> quantidades, List <Material> materiais) {
+		List <Material> mat = new ArrayList <Material> ();
 		Iterator it = quantidades.entrySet().iterator();
-		
 		while (it.hasNext()) {
 	        Map.Entry pair = (Map.Entry)it.next();
 	        Material m = new Material(((Material) pair.getKey()).getMaterial(), (int) pair.getValue());
-	        materiais.add(m);
+	        mat.add(m);
 	    }
-		return materiais;
+		return mat;
 	}
 	
 	public void closeSocket(ObjectOutputStream oo, ObjectInputStream oi, Socket s) throws IOException {

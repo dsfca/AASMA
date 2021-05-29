@@ -143,7 +143,6 @@ public class IMA extends Thread {
 				String material = s.nextLine();
 				String [] q = material.split(" ");
 				Material m = new Material(q[0], 1);
-				//System.out.println(m);
 				quantidades.put(m, Integer.parseInt(q[1]));
 			}
 			s.close();

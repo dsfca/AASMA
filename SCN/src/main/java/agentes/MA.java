@@ -67,7 +67,7 @@ public class MA extends Thread {
 	}
 	
 	public void run() {
-		System.out.println("INIT: MA started");
+		//System.out.println("INIT: MA started");
 		incrementThreads();
 		if(this.active_threads < this.possible_threads) {
 			newListener();
@@ -84,8 +84,8 @@ public class MA extends Thread {
 				ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
 				ppaObjectOutputStream.writeObject(object_p);
 				Pedido novo = (Pedido) ppaObjectInputStream.readObject();
+				System.out.println("A produzir pedido de cliente" + novo.getClientId());
 				closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
-				System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa");
 				produzido = produzir(novo);
 			}
 
@@ -102,12 +102,11 @@ public class MA extends Thread {
 		Socket ppaSocket = (Socket)new Socket(ini.getPPAHost(), ini.getPPAServerPort());
 		ObjectOutputStream ppaObjectOutputStream = new ObjectOutputStream(ppaSocket.getOutputStream());
 		ObjectInputStream ppaObjectInputStream = new ObjectInputStream(ppaSocket.getInputStream());
-		System.out.println("MA FIM");
 		//SEND "ma_v"
 		Object [] object_v = {"ma_v"};
 		ppaObjectOutputStream.writeObject(object_v);
 		Pedido p = (Pedido) ppaObjectInputStream.readObject();
-		System.out.println("Jeff");
+		System.out.println("A produzir pedido de cliente" + p.getClientId());
 		Pedido produzido = produzir(p);
 		closeSocket(ppaObjectOutputStream, ppaObjectInputStream, ppaSocket);
 		return produzido;
@@ -133,7 +132,7 @@ public class MA extends Thread {
 			produto_final = produto_final + material.getMaterial() + material.getQuantidade();
 		}
 		try {
-			Thread.sleep(wait_time * 1000);
+			Thread.sleep(((int)(wait_time/5)) * 1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

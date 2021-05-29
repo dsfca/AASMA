@@ -12,8 +12,8 @@ import agentes.IMA;
 import agentes.MA;
 import agentes.MPA;
 import agentes.OMA;
-import agentes.PPA1;
-import agentes.PPA1.Desire;
+import agentes.PPA;
+import agentes.PPA.Desire;
 
 public class SCN extends Thread{
 	
@@ -27,10 +27,17 @@ public class SCN extends Thread{
 	public void run() {
 		int clientId = 1;
 		
+		Desire d = Desire.maximizeIncome;
+		if(ini.getMode().equals("minimizeDeliveryTime")) {
+			d = Desire.maximizeIncome;
+		}else if(ini.getMode().equals("maximizeIncome")) {
+			d= Desire.minimizeDeliveryTime;
+		}
+		
 		try {
 			MPA mpa = new MPA();
 			mpa.start();
-			PPA1 ppa = new PPA1(Desire.minimizeDeliveryTime);
+			PPA ppa = new PPA(d);
 			ppa.start();
 			IMA ima = new IMA();
 			ima.start();
@@ -49,7 +56,7 @@ public class SCN extends Thread{
 				client.start();
 				clientId++;
 				//sleep between 5s-10s
-				int sleepTime = (int)(Math.random()*5000 + 2000); 
+				int sleepTime = (int)(Math.random()*5000 + ini.getSleepAddition()); 
 				sleep(sleepTime);
 
 			}

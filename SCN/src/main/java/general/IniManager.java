@@ -115,6 +115,15 @@ public class IniManager {
 		return ini.get("Pedido","max_produtos_na_lista", Integer.class);
 	}
 	
+	/**SCN**/
+	public int getSleepAddition() {
+		return ini.get("SCN","sleep_time_addition", Integer.class);
+	}
+	
+	public String getMode() {
+		return ini.get("SCN", "modo_operacao", String.class);
+	}
+	
 	
 	
 	public static void main(String[] args) {

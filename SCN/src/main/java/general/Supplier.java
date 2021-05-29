@@ -50,9 +50,9 @@ public class Supplier extends Thread{
 			closeSocket(objectOutputStream, objectInputStream, socket);
 			
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 	}
 	

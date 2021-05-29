@@ -81,10 +81,12 @@ public class Client extends Thread{
 		//ENVIAR DINHEIRO
 		int total_price = pedido.getTotalPrice();
 		objectOutputStream.writeObject(total_price);
+		System.out.println("CLIENTE" + this.id + " pagou " + total_price);
+		System.out.println("CLIENTE" + this.id + " RECEBEU!");
 		objectInputStream.close();
 		objectOutputStream.close();
 		generalSocket.close();
-		System.out.println("CLIENTE RECEBEU!!!!");
+		
 	}
 	
 	
