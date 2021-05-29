@@ -52,10 +52,6 @@ public class MPA extends Thread{
 			ObjectOutputStream objectOutputStream = new ObjectOutputStream(generalSocket.getOutputStream());
 			ObjectInputStream objectInputStream = new ObjectInputStream(generalSocket.getInputStream());
 			
-			Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
-			ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
-			ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
-			
 			System.out.println("MPA FIM");
 		
 			Object [] object = (Object[]) objectInputStream.readObject();
@@ -63,6 +59,11 @@ public class MPA extends Thread{
 			if (object[0].equals("get")) {
 				//CONSULTAR IMA
 				Object [] object_ima = {"gi", new ArrayList<Object>()};
+				
+				Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+				ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+				ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
+				
 				imaObjectOutputStream.writeObject(object_ima);
 				HashMap <Object, Integer> quantidades = (HashMap <Object, Integer>) imaObjectInputStream.readObject();
 				//ENVIAR PPA
@@ -84,6 +85,11 @@ public class MPA extends Thread{
 				List <Material> materiais = (List <Material>) object[1];
 				//IMA
 				Object [] object_ima = {"ri", materiais};
+				
+				Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+				ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+				ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
+				
 				imaObjectOutputStream.writeObject(object_ima);
 				HashMap <Material, Integer> quantidades = (HashMap<Material, Integer>) imaObjectInputStream.readObject();
 				//ANSWER PPA
@@ -106,6 +112,11 @@ public class MPA extends Thread{
 				closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				//ENVIAR IMA
 				Object [] object_ima = {"ai", materiais};
+				
+				Socket imaSocket = (Socket) new Socket(ini.getIMAHost(), ini.getIMAServerPort());
+				ObjectOutputStream imaObjectOutputStream = new ObjectOutputStream(imaSocket.getOutputStream());
+				ObjectInputStream imaObjectInputStream = new ObjectInputStream(imaSocket.getInputStream());
+				
 				imaObjectOutputStream.writeObject(object_ima);
 				if(imaObjectInputStream.readObject().equals("Added to inventory")) {
 					closeSocket(imaObjectOutputStream, imaObjectInputStream, imaSocket);

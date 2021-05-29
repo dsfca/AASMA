@@ -20,7 +20,7 @@ import general.Pedido;
 import general.SortbyDate;
 import general.SortbyPrice;
 
-public class PPA1 extends Thread {
+public class PPA extends Thread {
 	
 	private ServerSocket ssocket;
 	private IniManager ini;
@@ -33,7 +33,7 @@ public class PPA1 extends Thread {
 	private Pedido last_order;
 	private boolean MA_available;
 	public volatile List<Pedido> to_manufacture;
-	public boolean orders_to_manufacture;
+	public boolean existe_pedidos;
 	
 	//DELIBERATIVE
 	/**
@@ -45,7 +45,7 @@ public class PPA1 extends Thread {
 	 * 	 
 	 */
 	
-	public PPA1(Desire desire) throws InvalidFileFormatException, IOException {
+	public PPA(Desire desire) throws InvalidFileFormatException, IOException {
 		this.ini = new IniManager();
 		this.ssocket = new ServerSocket(ini.getPPAServerPort());
 		this.id_deliberative = -1;
@@ -71,7 +71,6 @@ public class PPA1 extends Thread {
 			}
 			if (Thread.currentThread().getId() == this.id_deliberative) {
 				Decision();
-				System.out.println("yo");
 			
 			}else{
 				System.out.println("INIT: PPA registration " + Thread.currentThread().getId());
@@ -83,6 +82,7 @@ public class PPA1 extends Thread {
 				Object [] object = (Object[]) objectInputStream.readObject();
 
 				if(object[0].equals("oma")) {
+					System.out.println("PPA: oma");
 					Pedido pedido = (Pedido) object[1];
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 					
@@ -92,13 +92,14 @@ public class PPA1 extends Thread {
 					addToQueue(pedido);
 				
 				}else if(object[0].equals("ma_v")) { //vaziu
+					System.out.println("PPA: ma_v");
 					//ESPERAR E ENTREGAR MA
-					while(!orders_to_manufacture) {
+					while(!existe_pedidos) {
 						MA_available = true;
 						secureWait();
 					}
 					Pedido pedido = to_manufacture.get(0);
-					orders_to_manufacture = false;
+					existe_pedidos = false;
 					
 					objectOutputStream.writeObject(pedido);
 
@@ -107,7 +108,7 @@ public class PPA1 extends Thread {
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("ma_p")) {//com pedido
-					
+					System.out.println("PPA: ma_p");
 					Pedido pedido_final = (Pedido) object[1];
 					
 					Object [] object_final = {"pronto", pedido_final};
@@ -117,14 +118,14 @@ public class PPA1 extends Thread {
 					omaObjectOutputStream.writeObject(object_final);
 					closeSocket(omaObjectOutputStream, omaObjectInputStream, omaSocket);
 					
-					while(orders_to_manufacture = false) {
+					while(existe_pedidos = false) {
 						MA_available = true;
 						secureWait();
 					}
 					
 					Pedido pedido = to_manufacture.remove(0);
 					
-					orders_to_manufacture = false;
+					existe_pedidos = false;
 					
 					objectOutputStream.writeObject(pedido);
 
@@ -133,6 +134,7 @@ public class PPA1 extends Thread {
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				
 				}else if(object[0].equals("new")) {
+					System.out.println("PPA: new");
 					//CHEGOU MATERIAL UPDATE ALGUMA COISA...
 					closeSocket(objectOutputStream, objectInputStream, generalSocket);
 				}
@@ -169,10 +171,8 @@ public class PPA1 extends Thread {
 			Pedido pedido = editPlan(6, null, null, 0);
 			if (queue.isEmpty() && pedido == null)
 				continue;
-
 			updateBeliefs();			
-			if (!plan.isEmpty()) {
->
+			if (plan.isEmpty()) {
 				if (desire == Desire.minimizeDeliveryTime) {
 					boolean manufactured = false;
 					for (int i = 0; i < plan.size(); i++) {
@@ -183,12 +183,8 @@ public class PPA1 extends Thread {
 							break;
 						}
 					}
-					
-					if (!manufactured) {
-						editPlan(1, null, queue, 0);
-						editPlan(2, null, null, 0);
-					}
-						
+					if (!manufactured)
+						editPlan(2, null, queue, 0);
 				}else {
 					Pedido next_order = editPlan(6, null, null, 0);
 					if(next_order != null) {
@@ -199,14 +195,12 @@ public class PPA1 extends Thread {
 								buy(next_order.getMateriais());
 								last_order = next_order;
 							}
-							editPlan(1, null, queue, 0);
-							editPlan(2, null, null, 0);
+							editPlan(2, null, queue, 0);
 						}
 					}	
 				}
 			}else {
-				editPlan(1, null, queue, 0);
-				editPlan(2, null, null, 0);
+				editPlan(2, null, queue, 0);
 			}
 		}
 	}
@@ -269,7 +263,7 @@ public class PPA1 extends Thread {
 		}
 		
 		to_manufacture.add(pedido);
-		orders_to_manufacture = true;
+		existe_pedidos = true;
 		editPlan(3, pedido, null, 0);
 	}
 
@@ -356,7 +350,7 @@ public class PPA1 extends Thread {
 	public enum Desire {maximizeIncome, minimizeDeliveryTime};
 
 	public static void main(String[] args) throws InvalidFileFormatException, IOException {
-		PPA1 ppa = new PPA1(Desire.maximizeIncome);
+		PPA ppa = new PPA(Desire.maximizeIncome);
 		ppa.start();
 
 	}
