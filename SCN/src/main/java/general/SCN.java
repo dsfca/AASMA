@@ -12,8 +12,8 @@ import agentes.IMA;
 import agentes.MA;
 import agentes.MPA;
 import agentes.OMA;
-import agentes.PPA;
-import agentes.PPA.Desire;
+import agentes.PPA1;
+import agentes.PPA1.Desire;
 
 public class SCN extends Thread{
 	
@@ -30,7 +30,7 @@ public class SCN extends Thread{
 		try {
 			MPA mpa = new MPA();
 			mpa.start();
-			PPA ppa = new PPA(Desire.minimizeDeliveryTime);
+			PPA1 ppa = new PPA1(Desire.minimizeDeliveryTime);
 			ppa.start();
 			IMA ima = new IMA();
 			ima.start();
